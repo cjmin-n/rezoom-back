@@ -1,3 +1,13 @@
 spring:
   profiles:
     active: dev  # 기본적으로 개발 환경(dev) 활성화
+  data:
+    mongodb:
+      uri: ${MONGO_DB_URI}  # .env 파일에서 값을 읽어옴
+      database: ${MONGO_DB_NAME}  # .env 파일에서 값을 읽어옴
+
+  discord:
+    webhook:
+      url: ${DISCORD_WEBHOOK_URL}  # .env 파일에서 값을 읽어옴
+server:
+  port: 8080  # 운영 환경 포트
