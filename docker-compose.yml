@@ -6,6 +6,8 @@ services:
     image: sonyeoul/spring-app:latest  # ✅ Docker Hub에서 최신 이미지 가져오기
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATA_MONGODB_URI=${MONGO_DB_URI}
