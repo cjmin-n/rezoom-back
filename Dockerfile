@@ -23,4 +23,4 @@ RUN export $(grep -v '^#' .env | xargs)
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
