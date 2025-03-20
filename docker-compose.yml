@@ -6,11 +6,10 @@ services:
     image: sonyeoul/spring-app:latest
     ports:
       - "9000:9000"
+    env_file:
+      - .env  # ✅ .env 파일 자동 로드
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - MONGO_DB_URI=${MONGO_DB_URI}
-      - MONGO_DB_NAME=${MONGO_DB_NAME}
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - SPRING_PROFILES_ACTIVE=prod  # ✅ Spring Boot 프로파일 설정
     networks:
       - backend_network
 

@@ -1,7 +1,4 @@
 spring:
-  profiles:
-    active: prod  # prod 프로파일 활성화
-
   data:
     mongodb:
       uri: ${MONGO_DB_URI}  # GitHub Secrets에서 값을 읽어옴

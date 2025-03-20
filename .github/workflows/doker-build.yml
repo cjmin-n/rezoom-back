@@ -5,6 +5,9 @@ on:
     branches:
       - main  # ✅ main 브랜치에 Push될 때 실행
 
+env:
+  DOCKER_HUB_REPOSITORY: sonyeoul/spring-app  # ✅ Docker Hub 레포지토리 변수화
+
 jobs:
   build:
     name: Build and Push Docker Image
@@ -23,9 +26,12 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
-      # 4️⃣ Docker 이미지 빌드 (빌드 인자 제거)
-      - name: Build and Push Docker Image
+      # 4️⃣ Docker 이미지 빌드 & 캐시 적용 (빌드 속도 향상)
+      - name: Build Docker Image
         run: |
           docker buildx build --platform linux/amd64 \
-            -t sonyeoul/spring-app:latest \
+            --tag $DOCKER_HUB_REPOSITORY:latest \
+            --tag $DOCKER_HUB_REPOSITORY:${{ github.sha }} \
+            --cache-from=type=registry,ref=$DOCKER_HUB_REPOSITORY:cache \
+            --cache-to=type=inline \
             --push .
