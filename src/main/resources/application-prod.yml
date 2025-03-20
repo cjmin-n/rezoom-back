@@ -1,0 +1,8 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGO_DB_URI}
+      database: Rezoom
+
+server:
+  port: 8080  # 운영 환경 포트

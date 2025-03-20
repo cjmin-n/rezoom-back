@@ -1,0 +1,27 @@
+name: Docker Build & Deploy Spring Boot
+
+on:
+  push:
+    branches:
+      - main  # ✅ main 브랜치에 Push될 때 실행
+
+jobs:
+  build:
+    name: Build Spring Boot Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ GitHub Repository Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Docker 빌드 (Spring Boot)
+      - name: Build Spring Boot Docker image
+        run: |
+          docker build -t springboot-app .
+
+      # 3️⃣ Docker Compose 실행 방법 안내 (GitHub Actions에서는 실행 X)
+      - name: Show Docker Run Instructions
+        run: |
+          echo "🔹 Run the following command to start containers locally:"
+          echo "docker-compose up --build"

@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: spring-app
+    image: spring-app:latest
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATA_MONGODB_URI=${MONGO_DB_URI}  # ✅ MongoDB Atlas 연결
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
