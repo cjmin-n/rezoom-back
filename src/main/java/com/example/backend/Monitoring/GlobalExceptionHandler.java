@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -12,13 +13,20 @@ import java.io.StringWriter;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private final DiscordMonitoring discordMonitoring;
+
+    @Autowired  // DiscordMonitoring 빈을 주입받음
+    public GlobalExceptionHandler(DiscordMonitoring discordMonitoring) {
+        this.discordMonitoring = discordMonitoring;
+    }
+
     @ExceptionHandler(Exception.class) // 모든 예외 감지
     public ResponseEntity<String> handleAllExceptions(Exception ex, WebRequest request) {
         // 에러 발생 위치를 포함한 상세 정보 생성
         String errorMessage = getErrorDetails(ex);
 
         // Discord Webhook으로 에러 전송
-        DiscordMonitoring.sendAlert(errorMessage);
+        discordMonitoring.sendAlert(errorMessage);
 
         return new ResponseEntity<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }

@@ -1,18 +1,20 @@
 package com.example.backend.Monitoring;
 
-import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Component  // Spring 빈으로 등록
 public class DiscordMonitoring {
 
-    private static final Dotenv dotenv = Dotenv.load();
-    private static final String DISCORD_WEBHOOK_URL = dotenv.get("DISCORD_WEBHOOK_URL");
+    @Value("${discord.webhook.url}")  // application.yml에서 값을 읽어옴
+    private String discordWebhookUrl;
 
-    public static void sendAlert(String errorMessage) {
-        if (DISCORD_WEBHOOK_URL == null || DISCORD_WEBHOOK_URL.isEmpty()) {
+    public void sendAlert(String errorMessage) {
+        if (discordWebhookUrl == null || discordWebhookUrl.isEmpty()) {
             System.out.println("Discord Webhook URL이 설정되지 않았습니다.");
             return;
         }
@@ -22,7 +24,7 @@ public class DiscordMonitoring {
         request.put("content", "🚨 **에러 발생!** 🚨\n```" + errorMessage + "```");
 
         try {
-            restTemplate.postForObject(DISCORD_WEBHOOK_URL, request, String.class);
+            restTemplate.postForObject(discordWebhookUrl, request, String.class);
         } catch (Exception e) {
             System.out.println("❌ Discord Webhook 전송 실패: " + e.getMessage());
         }

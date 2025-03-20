@@ -23,13 +23,9 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
-      # 4️⃣ Docker 이미지 빌드 & 환경 변수 전달 (빌드 컨텍스트 `.` 추가)
+      # 4️⃣ Docker 이미지 빌드 (빌드 인자 제거)
       - name: Build and Push Docker Image
         run: |
           docker buildx build --platform linux/amd64 \
-            --build-arg MONGO_DB_URI="${{ secrets.MONGO_DB_URI }}" \
-            --build-arg MONGO_DB_NAME="${{ secrets.MONGO_DB_NAME }}" \
-            --build-arg DISCORD_WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}" \
-            --build-arg SERVER_PORT="9000" \
             -t sonyeoul/spring-app:latest \
             --push .
