@@ -3,13 +3,12 @@ version: '3.8'
 services:
   app:
     container_name: spring-app
-    image: spring-app:latest
-    build: .
+    image: sonyeoul/spring-app:latest  # ✅ Docker Hub에서 최신 이미지 가져오기
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATA_MONGODB_URI=${MONGO_DB_URI}  # ✅ MongoDB Atlas 연결
+      - SPRING_DATA_MONGODB_URI=${MONGO_DB_URI}
     networks:
       - backend_network
 
