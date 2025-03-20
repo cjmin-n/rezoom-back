@@ -33,6 +33,6 @@ public class UserController {
     }
     @GetMapping("/test-error")
     public String testError() {
-        throw new RuntimeException("테스트용 에러 발생!");
+        throw new RuntimeException("비사아아아아앙!!");
     }
 }
