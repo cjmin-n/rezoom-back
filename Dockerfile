@@ -1,9 +1,14 @@
-# 1️⃣ Java 17 기반으로 빌드
+# 1️⃣ 빌드 단계: Gradle을 사용하여 JAR 파일 생성
 FROM eclipse-temurin:17-jdk as build
 WORKDIR /app
 
-# 2️⃣ 빌드 아티팩트 생성
+# 프로젝트 소스 코드 복사
 COPY . .
+
+# gradlew 실행 권한 추가
+RUN chmod +x ./gradlew
+
+# Gradle 빌드 실행 (테스트 제외)
 RUN ./gradlew clean build -x test
 
 # 3️⃣ 실행 컨테이너 생성
