@@ -1,19 +1,22 @@
-# 1️⃣ 첫 번째 스테이지: Gradle을 사용하여 빌드
+# 1️⃣ 빌드 단계: Gradle을 사용하여 JAR 파일 생성
 FROM eclipse-temurin:17-jdk as build
 WORKDIR /app
 
 # 프로젝트 소스 코드 복사
 COPY . .
 
-# Gradle로 프로젝트 빌드 (테스트 제외)
+# gradlew 실행 권한 추가
+RUN chmod +x ./gradlew
+
+# Gradle 빌드 실행 (테스트 제외)
 RUN ./gradlew clean build -x test
 
-# 2️⃣ 두 번째 스테이지: 실행을 위한 최적화된 이미지
+# 2️⃣ 실행 단계: 빌드된 JAR 파일을 실행하는 경량 이미지
 FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# 첫 번째 스테이지에서 빌드된 JAR 파일 복사
+# 빌드된 JAR 파일 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Spring Boot 애플리케이션 실행
+# 컨테이너에서 Spring Boot 실행
 CMD ["java", "-jar", "app.jar"]
