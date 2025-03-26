@@ -1,12 +1,12 @@
-name: CI - Build and Push Docker Image
+name: Docker Build and Push
 
 on:
   push:
     branches:
-      - main  # ✅ main 브랜치에 Push될 때 실행
+      - main
 
 env:
-  DOCKER_HUB_REPOSITORY: sonyeoul/spring-app  # ✅ Docker Hub 레포지토리 변수화
+  DOCKER_HUB_REPOSITORY: sonyeoul/spring-app
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Create .env file  # ✅ GitHub Secrets에서 .env 파일 생성
+      - name: Create .env file
         run: |
           echo "DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}" >> .env
           echo "MONGO_DB_URI=${{ secrets.MONGO_DB_URI }}" >> .env
