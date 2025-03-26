@@ -1,3 +1,4 @@
 spring:
   profiles:
     active: dev  # 기본적으로 개발 환경(dev) 활성화
+
