@@ -1,23 +1,34 @@
 package com.example.backend.user;
-import com.example.backend.entity.user.User;
+import com.example.backend.dto.SignUpRequestDTO;
+import com.example.backend.dto.UrlResponseDTO;
+import com.example.backend.entity.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+@CrossOrigin
 public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+    // 사용자 회원가입 API (POST 요청)
+    @PostMapping("/signup")
+    public ResponseEntity<UrlResponseDTO> signup(@RequestBody SignUpRequestDTO signUpRequestDTO) {
 
-    // 사용자 추가 API (POST 요청)
-    @PostMapping("/add")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.saveUser(user));
+        userService.saveUser(signUpRequestDTO); // 회원가입 진행 (DB 저장)
+
+        System.out.println("signUpRequestDTO: " + signUpRequestDTO);
+
+        return ResponseEntity.ok(
+                UrlResponseDTO.builder()
+                        .url("/auth/login") // 회원 가입이 완료된 후 로그인 페이지로 이동
+                        .message("회원가입을 성공했습니다.")
+                        .build()
+        );
     }
 
     // 모든 사용자 조회 API (GET 요청)
