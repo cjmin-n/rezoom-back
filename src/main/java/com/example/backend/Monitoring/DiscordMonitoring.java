@@ -24,7 +24,7 @@ public class DiscordMonitoring {
         try {
             restTemplate.postForObject(DISCORD_WEBHOOK_URL, request, String.class);
         } catch (Exception e) {
-            System.out.println("❌ Discord Webhook 전송 실패: " + e.getMessage());
+            System.out.println("Discord Webhook 전송 실패: " + e.getMessage());
         }
     }
 }

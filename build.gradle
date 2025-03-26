@@ -26,6 +26,9 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-java:3.0.0") // .env 파일 로드
     implementation 'org.projectlombok:lombok:1.18.30'  // ✅ 최신 버전
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    implementation 'org.springdoc:springdoc-openapi-ui:2.1.0'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.postgresql:postgresql:42.6.0'
 }
 
 tasks.named('test') {
