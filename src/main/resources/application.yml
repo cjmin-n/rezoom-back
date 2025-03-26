@@ -1,10 +1,6 @@
 spring:
   profiles:
     active: dev  # 기본적으로 개발 환경(dev) 활성화
-  data:
-    mongodb:
-      uri: ${MONGO_DB_URI}  # GitHub Secrets에서 값을 읽어옴
-      database: ${MONGO_DB_NAME}  # GitHub Secrets에서 값을 읽어옴
 
 discord:
   webhook:
