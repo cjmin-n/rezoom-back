@@ -3,6 +3,7 @@ package com.example.backend.token;
 import com.example.backend.config.jwt.JwtUtil;
 import com.example.backend.dto.TokenRefreshRequestDTO;
 import com.example.backend.entity.User;
+import com.example.backend.swagger.TokenControllerDocs;
 import com.example.backend.user.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +22,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auths/token")
-public class TokenController {
+public class TokenController implements TokenControllerDocs {
 
     private final RefreshTokenService refreshTokenService;
     private final JwtUtil jwtUtil;
