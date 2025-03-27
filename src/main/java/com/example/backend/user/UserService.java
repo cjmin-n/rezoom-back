@@ -7,6 +7,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,5 +31,9 @@ public class UserService {
     // 특정 이름의 사용자 조회
     public List<User> getUsersByName(String name) {
         return userRepository.findByName(name);
+    }
+
+    public Optional<User> findByEmail(String username) {
+        return userRepository.findByEmail(username);
     }
 }

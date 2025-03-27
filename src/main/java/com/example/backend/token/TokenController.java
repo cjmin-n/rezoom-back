@@ -108,21 +108,14 @@ public class TokenController {
      * };
      *
      * **/
-
-
-
-
+    
 
 
 
     // front에서 refreshToken을 보내서 갱신하려는 경우에.
     // 프론트에서 refreshToken 넘겨주고 갱신하는 부분.
     @PostMapping("/refresh")
-    public ResponseEntity<TokenRefreshRequestDTO> refreshToken(@RequestBody TokenRefreshRequestDTO tokenRefreshRequestDTO) {
-
-        // 클라이언트에서 보낸 refreshToken을 받아옴
-        String refreshToken = tokenRefreshRequestDTO.getRefreshToken();
-        System.out.println("Received refreshToken: " + refreshToken);
+    public ResponseEntity<TokenRefreshRequestDTO> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
         // refreshToken이 유효한지 검증
         if (refreshToken == null || !jwtUtil.verifyToken(refreshToken)) {
