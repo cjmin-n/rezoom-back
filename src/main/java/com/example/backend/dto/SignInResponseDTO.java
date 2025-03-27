@@ -11,5 +11,5 @@ public class SignInResponseDTO {
     private String name;
     private String email;
     private String message;
-    private String jwtToken;
+    private String accessToken;
 }
