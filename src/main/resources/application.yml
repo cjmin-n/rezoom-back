@@ -7,3 +7,7 @@ discord:
     url: ${DISCORD_WEBHOOK_URL}  # GitHub Secrets에서 값을 읽어옴
 server:
   port: 8080  # 운영 환경 포트
+
+fastapi:
+  base-url: http://localhost:8000  # FastAPI 기본 URL
+  endpoint: /process-pdf
