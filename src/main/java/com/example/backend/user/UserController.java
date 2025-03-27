@@ -2,6 +2,7 @@ package com.example.backend.user;
 import com.example.backend.dto.SignUpRequestDTO;
 import com.example.backend.dto.UrlResponseDTO;
 import com.example.backend.entity.User;
+import com.example.backend.swagger.UserControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +12,7 @@ import java.util.List;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 @CrossOrigin
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
