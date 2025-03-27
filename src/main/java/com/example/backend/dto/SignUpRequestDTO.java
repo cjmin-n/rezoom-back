@@ -11,17 +11,22 @@ public class SignUpRequestDTO {
     private String name;
     private String phone;
     private int age;
+    private String companyName;
+    private String businessNumber;
     private String role;
 
-    public User toUser(BCryptPasswordEncoder bCryptPasswordEncoder){
+    public User toUser(BCryptPasswordEncoder bCryptPasswordEncoder) {
+        String finalName = role.equals("HR") ? companyName : name;
+        String finalPhone = role.equals("HR") ? businessNumber : phone;
+
         return User.builder()
                 .email(email)
                 .password(bCryptPasswordEncoder.encode(password))
-                .name(name)
+                .name(finalName)
+                .phone(finalPhone)
                 .age(age)
-                .phone(phone)
                 .role(role)
                 .build();
     }
-
 }
+
