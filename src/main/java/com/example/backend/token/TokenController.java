@@ -21,7 +21,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/auths/token")
+@RequestMapping("/auth/token")
 public class TokenController implements TokenControllerDocs {
 
     private final RefreshTokenService refreshTokenService;
@@ -31,36 +31,36 @@ public class TokenController implements TokenControllerDocs {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader, HttpServletResponse response) {
 
+        System.out.println("authHeader = " + authHeader);
         try {
             if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
                 authHeader = authHeader.substring(7);
             }
 
-            User findUser = userRepository.findByEmail(jwtUtil.getUid(authHeader))
+            String email = jwtUtil.getUid(authHeader);
+            User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new IllegalStateException("회원이 존재하지 않습니다."));
 
             // Refresh Token 삭제
-            refreshTokenService.deleteRefreshToken(findUser);
+            refreshTokenService.deleteRefreshToken(user);
+            log.info("{}님의 refreshToken 로그아웃 완료", user.getEmail());
 
-            System.out.println("삭제 완료");
+            // 쿠키 만료 (refreshToken이 쿠키로 관리 중일 경우)
+            Cookie refreshCookie = new Cookie("refreshToken", null);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(true);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(0);
+            response.addCookie(refreshCookie);
 
-            // Authorization 쿠키 만료
-            Cookie authorizationCookie = new Cookie("Authorization", null);
-            authorizationCookie.setHttpOnly(true);
-            authorizationCookie.setSecure(true); // HTTPS 환경에서 사용
-            authorizationCookie.setPath("/"); // 쿠키 경로 설정
-            authorizationCookie.setMaxAge(0); // 즉시 만료
-            response.addCookie(authorizationCookie);
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .body(Map.of("message", "Logout successful."));
+            return ResponseEntity.ok(Map.of("message", "Logout successful."));
         } catch (Exception e) {
+            log.error("❌ 로그아웃 중 에러", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .body(Map.of("message", "An error occurred during logout."));
         }
     }
+
 
     // front에서 이런식으로 요청 보내시면 돼요!
     /**
