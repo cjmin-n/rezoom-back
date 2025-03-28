@@ -19,7 +19,6 @@ public class UserService {
     // 사용자 저장
     public User saveUser(SignUpRequestDTO signUpRequestDTO) {
         User user = signUpRequestDTO.toUser(bCryptPasswordEncoder);
-
         return userRepository.save(user);
     }
 
