@@ -4,7 +4,10 @@ import com.example.backend.dto.UrlResponseDTO;
 import com.example.backend.entity.User;
 import com.example.backend.swagger.UserControllerDocs;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -30,6 +33,49 @@ public class UserController implements UserControllerDocs {
                         .message("회원가입을 성공했습니다.")
                         .build()
         );
+    }
+
+    /**
+     *
+     * front에서 이런식으로 보내시면 됩니다.
+     *
+     * fetch('/auth/tutorial', {
+     *   method: 'PUT',
+     *   headers: {
+     *     'Authorization': 'Bearer ' + accessToken
+     *   }
+     * })
+     *   .then(response => response.json())
+     *   .then(data => {
+     *     console.log('튜토리얼 상태 업데이트 성공:', data);
+     *   })
+     *   .catch(error => {
+     *     console.error('튜토리얼 업데이트 에러:', error);
+     *   });
+     *
+     * **/
+    @PutMapping("/tutorial")
+    public ResponseEntity<?> updateTutorialStatus(@AuthenticationPrincipal User authenticatedUser) {
+        // 인증 정보 확인
+        if (authenticatedUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
+        }
+
+        try {
+            // 튜토리얼 상태 업데이트 로직 실행
+            userService.tutorialComplete(authenticatedUser);
+            return ResponseEntity.ok("튜토리얼 상태가 업데이트되었습니다.");
+        } catch (UsernameNotFoundException e) {
+            // 예: 사용자 정보가 DB에 없을 경우
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+        } catch (IllegalStateException e) {
+            // 예: 이미 튜토리얼이 완료된 상태라면
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("튜토리얼 상태 업데이트 중 충돌 발생: " + e.getMessage());
+        } catch (Exception e) {
+            // 그 외의 예상치 못한 오류 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("서버 에러가 발생하였습니다: " + e.getMessage());
+        }
     }
 
     // 모든 사용자 조회 API (GET 요청)

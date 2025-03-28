@@ -20,7 +20,16 @@ public class UserService {
     public User saveUser(SignUpRequestDTO signUpRequestDTO) {
         User user = signUpRequestDTO.toUser(bCryptPasswordEncoder);
 
+        // 튜토리얼 진행하지 않은 상태로 회원가입
+        user.setTutorial(false);
+
         return userRepository.save(user);
+    }
+
+    public void tutorialComplete(User authenticatedUser) {
+        // 튜토리얼 완료 상태 업데이트
+        authenticatedUser.setTutorial(true);
+        userRepository.save(authenticatedUser);
     }
 
     // 전체 사용자 조회
