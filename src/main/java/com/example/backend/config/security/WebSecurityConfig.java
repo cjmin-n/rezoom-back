@@ -46,10 +46,12 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
                         .requestMatchers(
-                                "/auth/login", "/auth/signup",
+                                "/auth/login", "/auth/signup", "/auths/token/logout",
                                 "/swagger-ui/**", "/swagger-ui.html",
                                 "/swagger-resources/**", "/webjars/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/api/**",
+                                "/pdf/**"
                             ).permitAll()
                         .requestMatchers(
                                 "로그인 해야되는 곳들"
