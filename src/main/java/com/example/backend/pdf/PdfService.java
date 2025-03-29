@@ -1,5 +1,6 @@
 package com.example.backend.pdf;
 
+import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.entity.Pdf;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,6 +58,7 @@ public class PdfService {
                 .userId(userId) // TODO: 실제 유저 ID로 대체
                 .pdfFileName(uuidFileName)
                 .mongoObjectId(objectId)
+                .uploadedAt(LocalDateTime.now())
                 .build();
 
         pdfRepository.save(mapping);
@@ -75,6 +80,23 @@ public class PdfService {
         ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
 
         return response.getBody().get("object_id").toString();
+    }
+
+    public PdfResponseDTO getUserPdfs(Long userId) {
+
+        // TODO: 페이징처리 해줄거라면, findAllByUserId(userId, pageable)로 해줘야됨.
+        List<Pdf> pdfList = pdfRepository.findAllByUserId(userId);
+
+        List<PdfResponseDTO.PdfInfo> pdfInfos = pdfList.stream()
+                .map(pdf -> new PdfResponseDTO.PdfInfo(
+                        pdf.getId(),
+                        pdf.getPdfFileName(),
+                        pdf.getMongoObjectId(),
+                        pdf.getUploadedAt()
+                ))
+                .collect(Collectors.toList());
+
+        return new PdfResponseDTO(userId, pdfInfos);
     }
 }
 

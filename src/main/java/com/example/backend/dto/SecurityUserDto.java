@@ -11,7 +11,7 @@ import lombok.Setter;
 public class SecurityUserDto {
     // 이건 주로 Authentication 객체에서
     // 내부적으로 사용자 정보 추출할 때 쓰는 구조니까,
-    //Swagger 문서에서는 노출되지 않음
+    // Swagger 문서에서는 노출되지 않음
     private Long id;
     private String email;
     private String phone;
@@ -22,6 +22,7 @@ public class SecurityUserDto {
 
     public User toUser(){
         return User.builder()
+                .id(id)
                 .email(email)
                 .phone(phone)
                 .role(role)
