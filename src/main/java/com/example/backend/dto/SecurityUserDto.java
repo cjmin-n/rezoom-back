@@ -3,8 +3,10 @@ package com.example.backend.dto;
 import com.example.backend.entity.User;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 @Builder
 public class SecurityUserDto {
     // 이건 주로 Authentication 객체에서
@@ -16,6 +18,7 @@ public class SecurityUserDto {
     private String role;
     private int age;
     private String name;
+    private Boolean tutorial;
 
     public User toUser(){
         return User.builder()
@@ -24,6 +27,7 @@ public class SecurityUserDto {
                 .role(role)
                 .age(age)
                 .name(name)
+                .tutorial(tutorial)
                 .build();
 
     }
