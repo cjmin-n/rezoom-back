@@ -1,5 +1,6 @@
 package com.example.backend.user;
 
+import com.example.backend.dto.SecurityUserDto;
 import com.example.backend.dto.SignUpRequestDTO;
 import com.example.backend.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +27,11 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void tutorialComplete(User authenticatedUser) {
+    public void tutorialComplete(SecurityUserDto authenticatedUser) {
         // 튜토리얼 완료 상태 업데이트
-        authenticatedUser.setTutorial(true);
-        userRepository.save(authenticatedUser);
+        User user = authenticatedUser.toUser();
+        user.setTutorial(true);
+        userRepository.save(user);
     }
 
     // 전체 사용자 조회
