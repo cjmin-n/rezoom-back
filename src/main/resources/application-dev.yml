@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-request-size: 5MB
+      max-file-size: 5MB
   data:
     mongodb:
       uri: ${MONGO_DB_URI}  # .env 파일에서 값을 읽어옴
@@ -22,4 +26,5 @@ discord:
   webhook:
     url: ${DISCORD_WEBHOOK_URL}  # .env 파일에서 값을 읽어옴
 server:
+  max-http-request-header-size: 32KB
   port: 8080  # 운영 환경 포트
