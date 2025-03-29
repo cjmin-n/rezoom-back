@@ -1,5 +1,6 @@
 package com.example.backend.pdf;
 
+import com.example.backend.dto.SecurityUserDto;
 import com.example.backend.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class PdfController {
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadSinglePdf(@RequestParam("file") MultipartFile file,
-    @AuthenticationPrincipal User authenticatedUser) {
+    @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         if (authenticatedUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
         }

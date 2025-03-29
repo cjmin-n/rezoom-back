@@ -44,14 +44,14 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
+                        .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**","/webhook").permitAll()
                         .requestMatchers(
                                 "/auth/login", "/auth/signup", "/auths/token/logout",
                                 "/swagger-ui/**", "/swagger-ui.html",
                                 "/swagger-resources/**", "/webjars/**",
                                 "/v3/api-docs/**",
                                 "/api/**",
-                                "/pdf/**"
+                                "http://221.148.97.237:8080"
                             ).permitAll()
                         .requestMatchers(
                                 "로그인 해야되는 곳들"

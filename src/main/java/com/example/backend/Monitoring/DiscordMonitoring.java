@@ -9,7 +9,7 @@ import java.util.Map;
 public class DiscordMonitoring {
 
     private static final Dotenv dotenv = Dotenv.load();
-    private static final String DISCORD_WEBHOOK_URL = dotenv.get("DISCORD_WEBHOOK_URL");
+    private static final String DISCORD_WEBHOOK_URL = dotenv.get("DISCORD_SPRING");
 
     public static void sendAlert(String errorMessage) {
         if (DISCORD_WEBHOOK_URL == null || DISCORD_WEBHOOK_URL.isEmpty()) {
