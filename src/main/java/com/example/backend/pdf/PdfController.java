@@ -3,6 +3,7 @@ package com.example.backend.pdf;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.SecurityUserDto;
 import com.example.backend.entity.User;
+import com.example.backend.swagger.PdfControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/pdf")
 @RequiredArgsConstructor
-public class PdfController {
+public class PdfController implements PdfControllerDocs {
 
     private final PdfService pdfService;
 
