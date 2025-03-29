@@ -35,6 +35,6 @@ public class User {
     private String password;
 
     @Column
-    private boolean tutorial;
+    private Boolean tutorial;
 
 }
