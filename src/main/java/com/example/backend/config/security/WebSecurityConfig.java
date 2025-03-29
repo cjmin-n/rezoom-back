@@ -18,7 +18,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -46,7 +45,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**","/webhook").permitAll()
                         .requestMatchers(
-                                "/auth/login", "/auth/signup", "/auths/token/logout",
+                                "/auth/login", "/auth/signup", "/auth/token/logout",
                                 "/swagger-ui/**", "/swagger-ui.html",
                                 "/swagger-resources/**", "/webjars/**",
                                 "/v3/api-docs/**",
