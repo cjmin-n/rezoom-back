@@ -34,7 +34,6 @@ public class ModelController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
             HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
             // baseUrl과 endpoint를 조합하여 FastAPI URL 생성
@@ -46,6 +45,4 @@ public class ModelController {
                     .body("Error processing PDF: " + e.getMessage());
         }
     }
-
-
 }

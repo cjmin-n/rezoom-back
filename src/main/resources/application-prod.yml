@@ -4,7 +4,7 @@ spring:
       uri: ${MONGO_DB_URI}  # GitHub Secrets에서 값을 읽어옴
       database: ${MONGO_DB_NAME}  # GitHub Secrets에서 값을 읽어옴
   jwt:
-    secret: 1CUkGbcRHun/pzZ7iX5GLk4AswnEZor6gz1bu9tkfL7bh7x9O40g34qgkdOoct3CyQLh8Rb0nQ5oVKhv2/Ojvw==
+    secret: ${JWT_API}
 
 discord:
   webhook:
