@@ -1,5 +1,6 @@
 package com.example.backend.swagger;
 
+import com.example.backend.dto.SecurityUserDto;
 import com.example.backend.dto.SignUpRequestDTO;
 import com.example.backend.dto.UrlResponseDTO;
 import com.example.backend.entity.User;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
@@ -35,6 +37,24 @@ public interface UserControllerDocs {
             }
     )
     ResponseEntity<UrlResponseDTO> signup(@RequestBody SignUpRequestDTO signUpRequestDTO);
+
+    @Operation(
+            summary = "튜토리얼 상태 업데이트",
+            description = "인증된 사용자의 튜토리얼 상태를 업데이트합니다. (토큰 기반 인증 필요)",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "튜토리얼 상태가 업데이트되었습니다.",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "401", description = "인증 정보가 없습니다.",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다.",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "409", description = "튜토리얼 상태 업데이트 중 충돌 발생",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
+                            content = @Content(schema = @Schema(implementation = String.class)))
+            }
+    )
+    ResponseEntity<?> updateTutorialStatus(@AuthenticationPrincipal SecurityUserDto authenticatedUser);
 
     @Operation(summary = "모든 사용자 조회", description = "전체 사용자 목록을 반환합니다.")
     ResponseEntity<List<User>> getAllUsers();

@@ -1,4 +1,5 @@
 package com.example.backend.user;
+import com.example.backend.dto.SecurityUserDto;
 import com.example.backend.dto.SignUpRequestDTO;
 import com.example.backend.dto.UrlResponseDTO;
 import com.example.backend.entity.User;
@@ -55,7 +56,7 @@ public class UserController implements UserControllerDocs {
      *
      * **/
     @PutMapping("/tutorial")
-    public ResponseEntity<?> updateTutorialStatus(@AuthenticationPrincipal User authenticatedUser) {
+    public ResponseEntity<?> updateTutorialStatus(@AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         // 인증 정보 확인
         if (authenticatedUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
