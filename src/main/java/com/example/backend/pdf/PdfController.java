@@ -1,19 +1,16 @@
 package com.example.backend.pdf;
 
+import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.SecurityUserDto;
 import com.example.backend.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-
 
 @RestController
 @RequestMapping("/pdf")
@@ -24,14 +21,14 @@ public class PdfController {
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadSinglePdf(@RequestParam("file") MultipartFile file,
-    @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
+                                                  @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         if (authenticatedUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
         }
         try {
             System.out.println("pdf요청");
-            Long userId=authenticatedUser.getId();
-            String result = pdfService.handlePdfUpload(file,userId);
+            Long userId = authenticatedUser.getId();
+            String result = pdfService.handlePdfUpload(file, userId);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -39,4 +36,40 @@ public class PdfController {
             throw new RuntimeException(e);
         }
     }
+
+    // TODO: 응답형태 페이징객체 논의 필요.
+    @GetMapping("/list")
+    public ResponseEntity<PdfResponseDTO> getPdf(@AuthenticationPrincipal SecurityUserDto authenticatedUser) {
+        if (authenticatedUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Long userId = authenticatedUser.getId();
+        PdfResponseDTO response = pdfService.getUserPdfs(userId);
+
+        // front에는 이런 형식으로 response 됩니다.
+        /**
+         *
+         * {
+         *   "userId": 3,
+         *   "pdfs": [
+         *     {
+         *       "id": 1,
+         *       "pdfFileName": "3a5b-1234.pdf",
+         *       "mongoObjectId": "6605a2...",
+         *       "uploadedAt": "2025-03-29T10:15:30"
+         *     },
+         *     {
+         *       "id": 2,
+         *       "pdfFileName": "7b2d-abc.pdf",
+         *       "mongoObjectId": "6605a3...",
+         *       "uploadedAt": "2025-03-29T11:25:42"
+         *     }
+         *   ]
+         * }
+         *
+         * **/
+        return ResponseEntity.ok(response);
+    }
+
 }
