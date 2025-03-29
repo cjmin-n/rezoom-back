@@ -2,7 +2,6 @@ package com.example.backend.token;
 
 import com.example.backend.entity.RefreshToken;
 import com.example.backend.entity.User;
-import com.example.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
