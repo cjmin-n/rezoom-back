@@ -37,6 +37,7 @@ public class PdfController implements PdfControllerDocs {
             throw new RuntimeException(e);
         }
     }
+
     @PostMapping("/delete")
     public ResponseEntity<String> deletePdfById(
             @RequestBody Map<String, Long> request,
@@ -54,9 +55,6 @@ public class PdfController implements PdfControllerDocs {
         String result = pdfService.deletePdfById(pdfId, userId);
         return ResponseEntity.ok(result);
     }
-
-
-
 
 
     // TODO: 응답형태 페이징객체 논의 필요.
