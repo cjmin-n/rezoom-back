@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/pdf")
@@ -36,6 +37,26 @@ public class PdfController implements PdfControllerDocs {
             throw new RuntimeException(e);
         }
     }
+    @PostMapping("/delete")
+    public ResponseEntity<String> deletePdfById(
+            @RequestBody Map<String, Long> request,
+            @AuthenticationPrincipal SecurityUserDto authenticatedUser
+    ) {
+        if (authenticatedUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
+        }
+        Long userId = authenticatedUser.getId();
+        Long pdfId = request.get("pdfId");
+        if (pdfId == null) {
+            return ResponseEntity.badRequest().body("PDF ID가 없습니다");
+        }
+
+        String result = pdfService.deletePdfById(pdfId, userId);
+        return ResponseEntity.ok(result);
+    }
+
+
+
 
 
     // TODO: 응답형태 페이징객체 논의 필요.

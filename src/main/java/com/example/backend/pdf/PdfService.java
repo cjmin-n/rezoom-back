@@ -136,6 +136,43 @@ public class PdfService {
 
         return new PdfResponseDTO(userId, pdfInfos);
     }
+
+    public String deletePdfById(Long pdfId, Long userId) {
+
+        Pdf pdf = pdfRepository.findById(pdfId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 PDF가 존재하지 않습니다."));
+
+        boolean mongoDeleted = false;
+        boolean fileDeleted = false;
+        boolean sqlDeleted = false;
+
+        // 1. MongoDB 삭제
+        try {
+            deleteFastApiPdf(pdf.getMongoObjectId());
+            mongoDeleted = true;
+        } catch (Exception e) {
+            System.err.println("MongoDB 삭제 실패: " + e.getMessage());
+        }
+
+        // 2. 로컬 파일 삭제
+        String uploadPath = System.getProperty("user.dir") + "/uploads/";
+        File file = new File(uploadPath + File.separator + extractFileNameFromUri(pdf.getPdfUri()));
+        if (file.exists()) {
+            fileDeleted = file.delete();
+        }
+
+        // 3. SQL 삭제
+        try {
+            pdfRepository.deleteById(pdfId);
+            sqlDeleted = true;
+        } catch (Exception e) {
+            System.err.println("SQL 삭제 실패: " + e.getMessage());
+        }
+        return "삭제 완료 \nMongoDB: " + mongoDeleted + "\nFile: " + fileDeleted + "\nSQL: " + sqlDeleted;
+    }
+    private String extractFileNameFromUri(String uri) {
+        return uri.substring(uri.lastIndexOf("/") + 1);
+    }
 }
 
 
