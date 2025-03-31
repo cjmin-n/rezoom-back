@@ -27,7 +27,6 @@ public class PdfController implements PdfControllerDocs {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
         }
         try {
-            System.out.println("pdf요청");
             Long userId = authenticatedUser.getId();
             String result = pdfService.handlePdfUpload(file, userId);
             return ResponseEntity.ok(result);
@@ -37,6 +36,7 @@ public class PdfController implements PdfControllerDocs {
             throw new RuntimeException(e);
         }
     }
+
 
     // TODO: 응답형태 페이징객체 논의 필요.
     @GetMapping("/list")

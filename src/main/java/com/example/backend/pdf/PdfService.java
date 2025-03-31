@@ -17,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +30,12 @@ import java.util.stream.Collectors;
 public class PdfService {
 
     private static final String UPLOAD_DIR = "uploads/";
+    private static final String fastApiUrl = "http://localhost:8000";
     @Autowired
     private final PdfRepository pdfRepository;
     private final RestTemplate restTemplate;
 
-    public String handlePdfUpload(MultipartFile file,Long userId) throws IOException {
+    public String handlePdfUpload(MultipartFile file, Long userId) throws IOException {
         // 1. 확장자 체크
         if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
             throw new IllegalArgumentException("PDF 파일만 업로드 가능합니다.");
@@ -42,45 +45,80 @@ public class PdfService {
         File dir = new File(UPLOAD_DIR);
         if (!dir.exists()) dir.mkdirs();
 
-        // 3. UUID 기반 저장 파일명 생성
-        String extension = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
-        String uuidFileName = UUID.randomUUID() + extension;
-        File pdfFile = new File(UPLOAD_DIR + uuidFileName);
+        // 3. 실제 파일명으로 저장 (중복 방지하려면 userId 또는 timestamp 붙이기)
+        String originalFileName = file.getOriginalFilename();
+        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        String uuidFileName = UUID.randomUUID().toString() + extension;
+        String uploadPath = System.getProperty("user.dir") + "/uploads/";
+        File pdfFile = new File(uploadPath + File.separator + uuidFileName);
 
-        // 4. 파일 저장
-        file.transferTo(pdfFile);
+        System.out.println("파일 저장 경로: " + pdfFile.getAbsolutePath());
+        file.transferTo(pdfFile); // 여기서 실제 저장 완료됨
 
         // 5. FastAPI로 전송 → ObjectId 받아오기
-        String objectId = sendToFastApi(pdfFile);
+        String objectId = sendToPdfUpload(pdfFile);
+        System.out.println(objectId);
 
         // 6. DB 저장
-        Pdf mapping = Pdf.builder()
-                .userId(userId) // TODO: 실제 유저 ID로 대체
-                .pdfFileName(uuidFileName)
-                .mongoObjectId(objectId)
-                .uploadedAt(LocalDateTime.now())
-                .build();
+        try {
+            Pdf mapping = Pdf.builder()
+                    .userId(userId)
+                    .pdfUri("/files/" + uuidFileName)  // 실제 접근 경로로 설정
+                    .pdfFileName(originalFileName)
+                    .mongoObjectId(objectId)
+                    .uploadedAt(LocalDateTime.now())
+                    .build();
 
-        pdfRepository.save(mapping);
+            pdfRepository.save(mapping);
+
+        } catch (Exception e) {
+            System.err.println("SQL 저장 실패: " + e.getMessage());
+            deleteFastApiPdf(objectId);
+            if (pdfFile.exists()) {
+                pdfFile.delete();
+                System.out.println("로컬 파일 삭제 완료");
+            }
+            throw e;
+        }
 
         return "저장 완료";
     }
 
-    private String sendToFastApi(File pdfFile) {
-        String fastApiUrl = "http://localhost:8000/upload-pdf";
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", new FileSystemResource(pdfFile));
+    private String sendToPdfUpload(File pdfFile) {
+        System.out.println("📡 요청 URL: " + fastApiUrl);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        try {
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("resume", new FileSystemResource(pdfFile));
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl, requestEntity, Map.class);
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        return response.getBody().get("object_id").toString();
+            ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl+"/upload-pdf", requestEntity, Map.class);
+
+            System.out.println("FastAPI 응답: " + response);
+            return response.getBody().get("object_id").toString();
+
+        } catch (Exception e) {
+            System.err.println("FastAPI 요청 실패: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("FastAPI 업로드 실패", e);
+        }
     }
+    public void deleteFastApiPdf(String objectId) {
+        try {
+            restTemplate.delete(fastApiUrl+"/delete_resume/"+objectId);
+            System.out.println("FastAPI에 PDF 삭제 요청 완료 (ObjectId: " + objectId + ")");
+        } catch (Exception e) {
+            System.err.println("FastAPI 삭제 요청 실패: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("FastAPI에서 PDF 삭제 실패", e);
+        }
+    }
+
 
     public PdfResponseDTO getUserPdfs(Long userId) {
 
