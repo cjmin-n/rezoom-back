@@ -43,7 +43,7 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**","/webhook").permitAll()
+                        .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**","/webhook","/files/**").permitAll()
                         .requestMatchers(
                                 "/auth/login", "/auth/signup", "/auth/token/logout",
                                 "/swagger-ui/**", "/swagger-ui.html",
