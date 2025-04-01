@@ -78,12 +78,14 @@ public class PdfController implements PdfControllerDocs {
          *       "pdfFileName": "3a5b-1234.pdf",
          *       "mongoObjectId": "6605a2...",
          *       "uploadedAt": "2025-03-29T10:15:30"
+         *       "pdfUri": "/files/c3bb5efb-ff71-4a08-971d-89c3cc331f78.pdf"
          *     },
          *     {
          *       "id": 2,
          *       "pdfFileName": "7b2d-abc.pdf",
          *       "mongoObjectId": "6605a3...",
          *       "uploadedAt": "2025-03-29T11:25:42"
+         *       "pdfUri": "/files/62d40415-f322-44e9-aebc-b3cf97939831.pdf"
          *     }
          *   ]
          * }
