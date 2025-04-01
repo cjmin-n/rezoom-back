@@ -80,6 +80,24 @@ public class PdfController implements PdfControllerDocs {
         List<PostingMatchResultDTO> results = pdfService.posting2resume(file);
         return ResponseEntity.ok(results);
     }
+    @PostMapping("/reEpo") //resumeEndposting
+    public ResponseEntity<String> uploadMultipleFiles(
+            @AuthenticationPrincipal SecurityUserDto user,
+            @RequestParam("resume") MultipartFile file1,
+            @RequestParam("posting") MultipartFile file2) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+
+            // 성공적으로 처리 완료
+            return ResponseEntity.ok("매칭 성공");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("매칭 실패");
+        }
+    }
+
 
 
 
