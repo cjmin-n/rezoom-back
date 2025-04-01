@@ -12,7 +12,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "PDF", description = "PDF 업로드 및 조회 API")
+import java.util.Map;
+
+@Tag(name = "PDF", description = "PDF 관련 API")
 public interface PdfControllerDocs {
 
     @Operation(
@@ -37,6 +39,30 @@ public interface PdfControllerDocs {
     ResponseEntity<String> uploadSinglePdf(
             @Parameter(description = "업로드할 PDF 파일", required = true)
             MultipartFile file,
+            @Parameter(hidden = true) SecurityUserDto authenticatedUser
+    );
+
+    @Operation(
+            summary = "PDF 삭제",
+            description = "PDF ID를 통해 특정 PDF를 삭제합니다. (토큰 인증 필요)",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(schema = @Schema(
+                            description = "삭제할 PDF의 ID",
+                            example = "{\"pdfId\": 1}"
+                    ))
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "삭제 성공",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "400", description = "요청 본문 오류 또는 PDF ID 없음",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자",
+                            content = @Content(schema = @Schema(implementation = String.class)))
+            }
+    )
+    ResponseEntity<String> deletePdfById(
+            @RequestBody Map<String, Long> request,
             @Parameter(hidden = true) SecurityUserDto authenticatedUser
     );
 

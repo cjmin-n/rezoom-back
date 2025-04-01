@@ -36,5 +36,8 @@ public class PdfResponseDTO {
 
         @Schema(description = "업로드 시각", example = "2025-03-29T10:15:30")
         private LocalDateTime uploadedAt;
+
+        @Schema(description = "pdf 원본", example = "/files/c3bb5efb-ff71-4a08-971d-89c3cc331f78.pdf")
+        private String pdfUri;
     }
 }

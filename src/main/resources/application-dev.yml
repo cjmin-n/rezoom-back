@@ -9,11 +9,11 @@ spring:
       database: ${MONGO_DB_NAME}  # .env 파일에서 값을 읽어옴
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://192.168.0.181:5432/rezoom
-    username: postgres
-    password: 1234
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
   jwt:
-    secret: 1CUkGbcRHun/pzZ7iX5GLk4AswnEZor6gz1bu9tkfL7bh7x9O40g34qgkdOoct3CyQLh8Rb0nQ5oVKhv2/Ojvw==
+    secret: ${JWT_API}
   jpa:
     hibernate:
       ddl-auto: update  # 개발 중에는 update, 운영에선 validate or none 권장
