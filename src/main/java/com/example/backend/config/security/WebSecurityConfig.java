@@ -2,6 +2,7 @@ package com.example.backend.config.security;
 
 import com.example.backend.config.jwt.JwtAuthFilter;
 import com.example.backend.config.jwt.JwtExceptionFilter;
+import com.example.backend.config.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,10 +32,10 @@ public class WebSecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtUtil jwtUtil) throws Exception {
         AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
 
-        JsonUsernamePasswordAuthenticationFilter jsonFilter = new JsonUsernamePasswordAuthenticationFilter(authenticationManager);
+        JsonUsernamePasswordAuthenticationFilter jsonFilter = new JsonUsernamePasswordAuthenticationFilter(authenticationManager, jwtUtil);
         jsonFilter.setAuthenticationSuccessHandler(successHandler);
         jsonFilter.setAuthenticationFailureHandler(failureHandler);
 
