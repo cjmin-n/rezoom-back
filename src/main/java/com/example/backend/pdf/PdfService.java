@@ -101,7 +101,7 @@ public class PdfService {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl+"/upload-pdf", requestEntity, Map.class);
+            ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl+"/resumes/upload-pdf", requestEntity, Map.class);
 
             System.out.println("FastAPI 응답: " + response);
             return response.getBody().get("object_id").toString();
@@ -115,7 +115,7 @@ public class PdfService {
 
     public void deleteFastApiPdf(String objectId) {
         try {
-            restTemplate.delete(fastApiUrl+"/delete_resume/"+objectId);
+            restTemplate.delete(fastApiUrl+"/resumes/delete_resume/"+objectId);
             System.out.println("FastAPI에 PDF 삭제 요청 완료 (ObjectId: " + objectId + ")");
         } catch (Exception e) {
             System.err.println("FastAPI 삭제 요청 실패: " + e.getMessage());
@@ -192,7 +192,7 @@ public class PdfService {
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
             // 2. FastAPI 호출 (JSON 문자열 응답)
-            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/match_resume", requestEntity, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/resumes/match_resume", requestEntity, String.class);
 
             // 3. JSON 파싱: matching_jobs만 추출
             ObjectMapper objectMapper = new ObjectMapper();
@@ -223,7 +223,7 @@ public class PdfService {
 
             // 2. FastAPI 호출
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    fastApiUrl + "/match_job_posting", requestEntity, String.class);
+                    fastApiUrl + "/resumes/match_job_posting", requestEntity, String.class);
 
             // 3. matching_resumes 파싱
             ObjectMapper objectMapper = new ObjectMapper();
