@@ -1,8 +1,9 @@
 package com.example.backend.pdf;
 
 import com.example.backend.dto.PdfResponseDTO;
+import com.example.backend.dto.PostingMatchResultDTO;
+import com.example.backend.dto.ResumeMatchResultDTO;
 import com.example.backend.dto.SecurityUserDto;
-import com.example.backend.entity.User;
 import com.example.backend.swagger.PdfControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -55,7 +57,30 @@ public class PdfController implements PdfControllerDocs {
         String result = pdfService.deletePdfById(pdfId, userId);
         return ResponseEntity.ok(result);
     }
+    @PostMapping("/EtoC") //이력서 to 채용
+    public ResponseEntity<List<ResumeMatchResultDTO>> resume2posting(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
 
+        if (authenticatedUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<ResumeMatchResultDTO> results = pdfService.resume2posting(file);
+        return ResponseEntity.ok(results);
+    }
+    @PostMapping("/CtoE")
+    public ResponseEntity<List<PostingMatchResultDTO>> matchJobPosting(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal SecurityUserDto user
+    ) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<PostingMatchResultDTO> results = pdfService.posting2resume(file);
+        return ResponseEntity.ok(results);
+    }
 
     // TODO: 응답형태 페이징객체 논의 필요.
     @GetMapping("/list")
@@ -93,5 +118,4 @@ public class PdfController implements PdfControllerDocs {
          * **/
         return ResponseEntity.ok(response);
     }
-
 }
