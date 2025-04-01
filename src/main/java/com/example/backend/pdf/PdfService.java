@@ -1,7 +1,13 @@
 package com.example.backend.pdf;
 
+import com.example.backend.config.MultipartInputStreamFileResource;
 import com.example.backend.dto.PdfResponseDTO;
+import com.example.backend.dto.PostingMatchResultDTO;
+import com.example.backend.dto.ResumeMatchResultDTO;
 import com.example.backend.entity.Pdf;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -20,6 +26,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -40,7 +47,6 @@ public class PdfService {
         if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
             throw new IllegalArgumentException("PDF 파일만 업로드 가능합니다.");
         }
-
         // 2. 디렉토리 없으면 생성
         File dir = new File(UPLOAD_DIR);
         if (!dir.exists()) dir.mkdirs();
@@ -68,7 +74,6 @@ public class PdfService {
                     .mongoObjectId(objectId)
                     .uploadedAt(LocalDateTime.now())
                     .build();
-
             pdfRepository.save(mapping);
 
         } catch (Exception e) {
@@ -86,7 +91,7 @@ public class PdfService {
 
 
     private String sendToPdfUpload(File pdfFile) {
-        System.out.println("📡 요청 URL: " + fastApiUrl);
+        System.out.println("요청 URL: " + fastApiUrl);
 
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -173,6 +178,68 @@ public class PdfService {
     private String extractFileNameFromUri(String uri) {
         return uri.substring(uri.lastIndexOf("/") + 1);
     }
+
+    public List<ResumeMatchResultDTO> resume2posting(MultipartFile file) {
+        try {
+            // 1. form-data 구성
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("resume", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // 2. FastAPI 호출 (JSON 문자열 응답)
+            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/match_resume", requestEntity, String.class);
+
+            // 3. JSON 파싱: matching_jobs만 추출
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode jobsNode = root.get("matching_jobs");
+
+            // 4. matching_jobs → DTO 리스트로 매핑
+            return objectMapper.readValue(
+                    jobsNode.toString(),
+                    new TypeReference<List<ResumeMatchResultDTO>>() {}
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList(); // 실패 시 빈 리스트 반환
+        }
+    }
+
+    public List<PostingMatchResultDTO> posting2resume(MultipartFile file) {
+        try {
+            // 1. 파일 → form-data로 구성
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("job_posting", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // 2. FastAPI 호출
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    fastApiUrl + "/match_job_posting", requestEntity, String.class);
+
+            // 3. matching_resumes 파싱
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode resumeList = root.get("matching_resumes");
+
+            return objectMapper.readValue(
+                    resumeList.toString(),
+                    new TypeReference<List<PostingMatchResultDTO>>() {}
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+
 }
 
 
