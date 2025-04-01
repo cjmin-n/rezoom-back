@@ -89,7 +89,6 @@ public class PdfService {
         return "저장 완료";
     }
 
-
     private String sendToPdfUpload(File pdfFile) {
         System.out.println("요청 URL: " + fastApiUrl);
 
@@ -113,6 +112,7 @@ public class PdfService {
             throw new RuntimeException("FastAPI 업로드 실패", e);
         }
     }
+
     public void deleteFastApiPdf(String objectId) {
         try {
             restTemplate.delete(fastApiUrl+"/resumes/delete_resume/"+objectId);
@@ -135,7 +135,8 @@ public class PdfService {
                         pdf.getId(),
                         pdf.getPdfFileName(),
                         pdf.getMongoObjectId(),
-                        pdf.getUploadedAt()
+                        pdf.getUploadedAt(),
+                        pdf.getPdfUri()
                 ))
                 .collect(Collectors.toList());
 
