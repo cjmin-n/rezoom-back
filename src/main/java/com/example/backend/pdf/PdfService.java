@@ -1,6 +1,7 @@
 package com.example.backend.pdf;
 
 import com.example.backend.config.MultipartInputStreamFileResource;
+import com.example.backend.config.aws.S3Uploader;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.ResumeMatchResultDTO;
@@ -38,6 +39,7 @@ public class PdfService {
 
     private static final String UPLOAD_DIR = "uploads/";
     private static final String fastApiUrl = "http://localhost:8000";
+    private final S3Uploader s3Uploader;
     @Autowired
     private final PdfRepository pdfRepository;
     private final RestTemplate restTemplate;
