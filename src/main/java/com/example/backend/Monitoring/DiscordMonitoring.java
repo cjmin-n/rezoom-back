@@ -1,5 +1,6 @@
 package com.example.backend.Monitoring;
 
+import com.example.backend.config.aws.EnvUtils;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.web.client.RestTemplate;
 
@@ -8,8 +9,7 @@ import java.util.Map;
 
 public class DiscordMonitoring {
 
-    private static final Dotenv dotenv = Dotenv.load();
-    private static final String DISCORD_WEBHOOK_URL = dotenv.get("DISCORD_SPRING");
+    private static final String DISCORD_WEBHOOK_URL = EnvUtils.get("DISCORD_SPRING");
 
     public static void sendAlert(String errorMessage) {
         if (DISCORD_WEBHOOK_URL == null || DISCORD_WEBHOOK_URL.isEmpty()) {

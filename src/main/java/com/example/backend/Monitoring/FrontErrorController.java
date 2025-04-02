@@ -1,5 +1,6 @@
 package com.example.backend.Monitoring;
 
+import com.example.backend.config.aws.EnvUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -9,11 +10,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class FrontErrorController {
 
-    private static final Dotenv dotenv = Dotenv.load();
     private final DiscordNotifier notifier;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static final String FRONT_ERROR_WEBHOOK = dotenv.get("DISCORD_FRONT_ERROR_WEBHOOK");
+    private static final String FRONT_ERROR_WEBHOOK = EnvUtils.get("DISCORD_FRONT_ERROR_WEBHOOK");
 
     public FrontErrorController(DiscordNotifier notifier) {
         this.notifier = notifier;

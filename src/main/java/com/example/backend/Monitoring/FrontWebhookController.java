@@ -1,5 +1,6 @@
 package com.example.backend.Monitoring;
 
+import com.example.backend.config.aws.EnvUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -9,13 +10,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class FrontWebhookController {
 
-    private static final Dotenv dotenv = Dotenv.load();
     private final DiscordNotifier notifier;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static final String FRONT_ISSUE_WEBHOOK = dotenv.get("DISCORD_FRONT_ISSUE_WEBHOOK");
-    private static final String FRONT_PR_WEBHOOK = dotenv.get("DISCORD_FRONT_PR_WEBHOOK");
-    private static final String FRONT_PUSH_WEBHOOK = dotenv.get("DISCORD_FRONT_PUSH_WEBHOOK");
+    private static final String FRONT_ISSUE_WEBHOOK = EnvUtils.get("DISCORD_FRONT_ISSUE_WEBHOOK");
+    private static final String FRONT_PR_WEBHOOK = EnvUtils.get("DISCORD_FRONT_PR_WEBHOOK");
+    private static final String FRONT_PUSH_WEBHOOK = EnvUtils.get("DISCORD_FRONT_PUSH_WEBHOOK");
 
     public FrontWebhookController(DiscordNotifier notifier) {
         this.notifier = notifier;

@@ -13,9 +13,8 @@ public class AwsS3Config {
 
     @Bean
     public AmazonS3 amazonS3() {
-        Dotenv dotenv = Dotenv.configure().load();
-        String accessKey = dotenv.get("AWS_ACCESS_KEY_ID");
-        String secretKey = dotenv.get("AWS_SECRET_ACCESS_KEY");
+        String accessKey = EnvUtils.get("AWS_ACCESS_KEY_ID");
+        String secretKey = EnvUtils.get("AWS_SECRET_ACCESS_KEY");
         BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
         return AmazonS3ClientBuilder.standard()

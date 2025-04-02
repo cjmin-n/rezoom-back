@@ -1,4 +1,5 @@
 package com.example.backend.config;
+import com.example.backend.config.aws.EnvUtils;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -18,7 +19,7 @@ public class MongoConfig {
 
     @Bean
     public MongoClient mongoClient() {
-        String uri = dotenv.get("MONGO_DB_URI"); // ✅ `.env`에서 MongoDB URI 가져오기
+        String uri = EnvUtils.get("MONGO_DB_URI"); // ✅ `.env`에서 MongoDB URI 가져오기
 
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(new ConnectionString(uri))

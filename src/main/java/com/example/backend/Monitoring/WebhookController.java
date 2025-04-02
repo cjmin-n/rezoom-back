@@ -1,5 +1,6 @@
 package com.example.backend.Monitoring;
 
+import com.example.backend.config.aws.EnvUtils;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,13 +17,12 @@ import org.springframework.web.bind.annotation.*;
 public class WebhookController {
 
 
-    private static final Dotenv dotenv = Dotenv.load();
     private final DiscordNotifier notifier;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static final String ISSUE_WEBHOOK = dotenv.get("DISCORD_ISSUE_WEBHOOK");
-    private static final String PR_WEBHOOK = dotenv.get("DISCORD_PR_WEBHOOK");
-    private static final String PUSH_WEBHOOK = dotenv.get("DISCORD_PUSH_WEBHOOK");
+    private static final String ISSUE_WEBHOOK = EnvUtils.get("DISCORD_ISSUE_WEBHOOK");
+    private static final String PR_WEBHOOK = EnvUtils.get("DISCORD_PR_WEBHOOK");
+    private static final String PUSH_WEBHOOK = EnvUtils.get("DISCORD_PUSH_WEBHOOK");
 
     public WebhookController(DiscordNotifier notifier) {
         this.notifier = notifier;
