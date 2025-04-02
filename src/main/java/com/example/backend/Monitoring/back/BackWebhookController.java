@@ -1,34 +1,26 @@
-package com.example.backend.Monitoring;
+package com.example.backend.Monitoring.back;
 
-import com.example.backend.config.aws.EnvUtils;
-import io.github.cdimascio.dotenv.Dotenv;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.example.backend.Monitoring.DiscordNotifier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import net.dv8tion.jda.api.EmbedBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-public class WebhookController {
-
+@RequiredArgsConstructor
+public class BackWebhookController {
 
     private final DiscordNotifier notifier;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static final String ISSUE_WEBHOOK = EnvUtils.get("DISCORD_ISSUE_WEBHOOK");
-    private static final String PR_WEBHOOK = EnvUtils.get("DISCORD_PR_WEBHOOK");
-    private static final String PUSH_WEBHOOK = EnvUtils.get("DISCORD_PUSH_WEBHOOK");
+    // 채널 ID는 .env 또는 application.yml → EnvUtils 통해 가져옴
+    private static final String ISSUE_CHANNEL_ID = "1355364022672691271";
+    private static final String PR_CHANNEL_ID = "1355368829592539224";
+    private static final String PUSH_CHANNEL_ID = "1355368814140723340";
 
-    public WebhookController(DiscordNotifier notifier) {
-        this.notifier = notifier;
-    }
-
-    @PostMapping("/webhook")
+    @PostMapping("/webhook-back")
     public ResponseEntity<String> receiveWebhook(
             @RequestHeader("X-GitHub-Event") String event,
             @RequestBody String payloadJson) {
@@ -54,19 +46,13 @@ public class WebhookController {
         String url = node.get("issue").get("html_url").asText();
         String user = node.get("issue").get("user").get("login").asText();
 
-        String message = """
-        {
-          "embeds": [{
-            "title": "📝 New Issue: %s",
-            "description": "%s",
-            "url": "%s",
-            "footer": {"text": "by %s"},
-            "color": 3447003
-          }]
-        }
-        """.formatted(title, body, url, user);
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("📝 New Issue: " + title, url)
+                .setDescription(body)
+                .setFooter("by " + user)
+                .setColor(0x3498db); // 파란색
 
-        notifier.sendToDiscord(ISSUE_WEBHOOK, message);
+        notifier.sendEmbedBuilder(ISSUE_CHANNEL_ID, embed);
     }
 
     private void handlePullRequest(String json) throws Exception {
@@ -75,19 +61,13 @@ public class WebhookController {
         String url = node.get("pull_request").get("html_url").asText();
         String user = node.get("pull_request").get("user").get("login").asText();
 
-        String message = """
-        {
-          "embeds": [{
-            "title": "📦 Pull Request: %s",
-            "description": "새로운 PR이 등록되었습니다.",
-            "url": "%s",
-            "footer": {"text": "by %s"},
-            "color": 10181046
-          }]
-        }
-        """.formatted(title, url, user);
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("📦 Pull Request: " + title, url)
+                .setDescription("새로운 PR이 등록되었습니다.")
+                .setFooter("by " + user)
+                .setColor(0x9b59b6); // 보라색
 
-        notifier.sendToDiscord(PR_WEBHOOK, message);
+        notifier.sendEmbedBuilder(PR_CHANNEL_ID, embed);
     }
 
     private void handlePush(String json) throws Exception {
@@ -96,17 +76,11 @@ public class WebhookController {
         String branch = node.get("ref").asText().replace("refs/heads/", "");
         String repo = node.get("repository").get("full_name").asText();
 
-        String message = """
-        {
-          "embeds": [{
-            "title": "🚀 New Push to %s",
-            "description": "브랜치: %s\\n푸셔: %s",
-            "color": 3066993
-          }]
-        }
-        """.formatted(repo, branch, pusher);
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🚀 New Push to " + repo)
+                .setDescription("브랜치: `" + branch + "`\n푸셔: **" + pusher + "**")
+                .setColor(0x2ecc71); // 초록색
 
-        notifier.sendToDiscord(PUSH_WEBHOOK, message);
+        notifier.sendEmbedBuilder(PUSH_CHANNEL_ID, embed);
     }
 }
-
