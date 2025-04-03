@@ -31,14 +31,8 @@ cloud:
       static: ap-northeast-2
 
 discord:
-  webhook:
-    url: ${DISCORD_WEBHOOK_URL}  # .env 파일에서 값을 읽어옴
   bot:
     token: ${DISCORD_BOT_TOKEN}
-  channel:
-    issue: ${DISCORD_CHANNEL_ISSUE}
-    pr: ${DISCORD_CHANNEL_PR}
-    push: ${DISCORD_CHANNEL_PUSH}
 server:
   max-http-request-header-size: 32KB
   port: 8080  # 운영 환경 포트

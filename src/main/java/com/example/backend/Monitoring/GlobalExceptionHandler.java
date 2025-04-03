@@ -18,7 +18,7 @@ import java.io.StringWriter;
 public class GlobalExceptionHandler {
 
     private final DiscordNotifier notifier;
-    private static final String SPRING_ERROR_CHANNEL_ID = EnvUtils.get("DISCORD_SPRING_ERROR_CHANNEL");
+    private static final String SPRING_ERROR_CHANNEL_ID = "1355363528936132639";
 
     @ExceptionHandler(Exception.class) // 모든 예외 감지
     public ResponseEntity<String> handleAllExceptions(Exception ex, WebRequest request) {
