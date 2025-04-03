@@ -9,9 +9,8 @@ services:
     env_file:
       - .env  # ✅ .env 파일 자동 로드
     environment:
-      - SPRING_PROFILES_ACTIVE=prod  # ✅ Spring Boot 프로파일 설정
+      - SPRING_PROFILES_ACTIVE=dev  # ✅ Spring Boot 프로파일 설정
     networks:
       - backend_network
-
 networks:
   backend_network:
