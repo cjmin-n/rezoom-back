@@ -1,7 +1,7 @@
 package com.example.backend.config.security;
 
 import com.example.backend.config.jwt.JwtUtil;
-import com.example.backend.dto.LoginRequestDTO;
+import com.example.backend.dto.sign.LoginRequestDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

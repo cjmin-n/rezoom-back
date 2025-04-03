@@ -1,7 +1,7 @@
 package com.example.backend.user;
 
-import com.example.backend.dto.SecurityUserDto;
-import com.example.backend.dto.SignUpRequestDTO;
+import com.example.backend.dto.sign.SecurityUserDto;
+import com.example.backend.dto.sign.SignUpRequestDTO;
 import com.example.backend.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,6 +34,11 @@ public class UserService {
         User user = authenticatedUser.toUser();
         user.setTutorial(true);
         userRepository.save(user);
+    }
+
+    public void addCredit(Long userId, Integer credit) {
+        User user = userRepository.findById(userId).orElse(null);
+        user.setCredit(user.getCredit() + credit);
     }
 
     // 전체 사용자 조회

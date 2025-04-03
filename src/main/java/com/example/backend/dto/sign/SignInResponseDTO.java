@@ -1,4 +1,4 @@
-package com.example.backend.dto;
+package com.example.backend.dto.sign;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -20,6 +20,9 @@ public class SignInResponseDTO {
 
     @Schema(description = "사용자 이메일", example = "user@example.com")
     private String email;
+
+    @Schema(description = "사용자 전화번호", example = "01012341234")
+    private String phone;
 
     @Schema(description = "메시지", example = "로그인 성공")
     private String message;

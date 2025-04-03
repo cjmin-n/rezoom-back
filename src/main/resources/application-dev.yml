@@ -29,7 +29,8 @@ cloud:
       secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
       static: ap-northeast-2
-
+toss:
+  secret-key: test_sk_yZqmkKeP8gpY7GJKkjkO3bQRxB9l
 discord:
   bot:
     token: ${DISCORD_BOT_TOKEN}

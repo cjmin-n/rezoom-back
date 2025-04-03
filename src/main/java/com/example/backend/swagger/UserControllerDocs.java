@@ -1,7 +1,7 @@
 package com.example.backend.swagger;
 
-import com.example.backend.dto.SecurityUserDto;
-import com.example.backend.dto.SignUpRequestDTO;
+import com.example.backend.dto.sign.SecurityUserDto;
+import com.example.backend.dto.sign.SignUpRequestDTO;
 import com.example.backend.dto.UrlResponseDTO;
 import com.example.backend.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
