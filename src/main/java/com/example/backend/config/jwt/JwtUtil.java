@@ -23,6 +23,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtUtil {
     private final JwtProperties jwtProperties;
+    @Getter
     private final RefreshTokenService refreshTokenService; // RefreshTokenService를 통해 DB에 refresh token 저장 및 조회
     @Getter
     private String secretKey;
@@ -71,7 +72,7 @@ public class JwtUtil {
         String role = user.getRole();
         String name = user.getName();
 
-        long accessPeriod = 1000L * 60L * 30L; // 30분
+        long accessPeriod = 1000L * 60L * 120L; // 120분
         Claims claims = Jwts.claims().setSubject(email);
         claims.put("role", role);
         claims.put("name", name);
