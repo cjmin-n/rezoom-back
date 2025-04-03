@@ -37,4 +37,7 @@ public class User {
     @Column
     private Boolean tutorial;
 
+    @Column
+    private int credit;
+
 }

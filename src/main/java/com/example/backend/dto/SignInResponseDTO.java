@@ -26,4 +26,7 @@ public class SignInResponseDTO {
 
     @Schema(description = "JWT Access Token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI...")
     private String accessToken;
+
+    @Schema(description = "Credit amount", example = "1000")
+    private int credit;
 }

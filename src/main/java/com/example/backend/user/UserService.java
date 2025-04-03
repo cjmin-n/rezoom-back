@@ -24,6 +24,8 @@ public class UserService {
         // 튜토리얼 진행하지 않은 상태로 회원가입
         user.setTutorial(false);
 
+        user.setCredit(1000);
+
         return userRepository.save(user);
     }
 
