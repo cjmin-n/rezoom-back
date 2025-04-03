@@ -1,21 +1,37 @@
 package com.example.backend.user;
 
-import com.example.backend.entity.user.User;
+import com.example.backend.dto.SecurityUserDto;
+import com.example.backend.dto.SignUpRequestDTO;
+import com.example.backend.entity.User;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
     // 사용자 저장
-    public User saveUser(User user) {
+    public User saveUser(SignUpRequestDTO signUpRequestDTO) {
+        User user = signUpRequestDTO.toUser(bCryptPasswordEncoder);
+
+        // 튜토리얼 진행하지 않은 상태로 회원가입
+        user.setTutorial(false);
+
         return userRepository.save(user);
+    }
+
+    public void tutorialComplete(SecurityUserDto authenticatedUser) {
+        // 튜토리얼 완료 상태 업데이트
+        User user = authenticatedUser.toUser();
+        user.setTutorial(true);
+        userRepository.save(user);
     }
 
     // 전체 사용자 조회
@@ -26,5 +42,9 @@ public class UserService {
     // 특정 이름의 사용자 조회
     public List<User> getUsersByName(String name) {
         return userRepository.findByName(name);
+    }
+
+    public Optional<User> findByEmail(String username) {
+        return userRepository.findByEmail(username);
     }
 }

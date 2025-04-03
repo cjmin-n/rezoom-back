@@ -1,11 +1,13 @@
 spring:
   data:
     mongodb:
-      uri: ${MONGO_DB_URI}  # GitHub Secrets에서 값을 읽어옴
-      database: ${MONGO_DB_NAME}  # GitHub Secrets에서 값을 읽어옴
+      uri: ${MONGO_DB_URI}  # GitHub Secrets에서 값을 읽어옴/AWS에선 환경변수
+      database: ${MONGO_DB_NAME}  # GitHub Secrets에서 값을 읽어옴/AWS에선 환경변수
+  jwt:
+    secret: ${JWT_API}
 
 discord:
   webhook:
-    url: ${DISCORD_WEBHOOK_URL}  # GitHub Secrets에서 값을 읽어옴
+    url: ${DISCORD_WEBHOOK_URL}  # GitHub Secrets에서 값을 읽어옴/AWS에선 환경변수
 server:
   port: 9000  # 운영 환경 포트
