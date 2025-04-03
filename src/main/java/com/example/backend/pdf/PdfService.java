@@ -1,5 +1,7 @@
 package com.example.backend.pdf;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.backend.config.MultipartInputStreamFileResource;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
@@ -10,7 +12,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,8 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -41,77 +40,76 @@ public class PdfService {
     @Autowired
     private final PdfRepository pdfRepository;
     private final RestTemplate restTemplate;
+    @Autowired
+    private AmazonS3 amazonS3;
+
+    private final String s3BucketName = "rezoom-bucket";
 
     public String handlePdfUpload(MultipartFile file, Long userId) throws IOException {
         // 1. 확장자 체크
         if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
             throw new IllegalArgumentException("PDF 파일만 업로드 가능합니다.");
         }
-        // 2. 디렉토리 없으면 생성
-        File dir = new File(UPLOAD_DIR);
-        if (!dir.exists()) dir.mkdirs();
 
-        // 3. 실제 파일명으로 저장 (중복 방지하려면 userId 또는 timestamp 붙이기)
+        // 2. 파일 이름 생성
         String originalFileName = file.getOriginalFilename();
         String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
         String uuidFileName = UUID.randomUUID().toString() + extension;
-        String uploadPath = System.getProperty("user.dir") + "/uploads/";
-        File pdfFile = new File(uploadPath + File.separator + uuidFileName);
+        String key = "uploads/" + uuidFileName;
 
-        System.out.println("파일 저장 경로: " + pdfFile.getAbsolutePath());
-        file.transferTo(pdfFile); // 여기서 실제 저장 완료됨
+        // 3. S3 업로드
+        ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentType("application/pdf");
+        metadata.setContentLength(file.getSize());
 
-        // 5. FastAPI로 전송 → ObjectId 받아오기
-        String objectId = sendToPdfUpload(pdfFile);
-        System.out.println(objectId);
+        amazonS3.putObject(s3BucketName, key, file.getInputStream(), metadata);
 
-        // 6. DB 저장
-        try {
-            Pdf mapping = Pdf.builder()
-                    .userId(userId)
-                    .pdfUri("/files/" + uuidFileName)  // 실제 접근 경로로 설정
-                    .pdfFileName(originalFileName)
-                    .mongoObjectId(objectId)
-                    .uploadedAt(LocalDateTime.now())
-                    .build();
-            pdfRepository.save(mapping);
+        // ✅ v1 방식으로 S3 URL 얻기
+        String fileUrl = amazonS3.getUrl(s3BucketName, key).toString();
+        System.out.println("📦 S3 업로드 완료: " + fileUrl);
 
-        } catch (Exception e) {
-            System.err.println("SQL 저장 실패: " + e.getMessage());
-            deleteFastApiPdf(objectId);
-            if (pdfFile.exists()) {
-                pdfFile.delete();
-                System.out.println("로컬 파일 삭제 완료");
-            }
-            throw e;
-        }
+        // 4. FastAPI 전송 (MultipartFile 그대로 사용)
+        String objectId = sendToPdfUpload(file);
 
+        // 5. DB 저장
+        Pdf mapping = Pdf.builder()
+                .userId(userId)
+                .pdfUri(fileUrl)
+                .pdfFileName(originalFileName)
+                .mongoObjectId(objectId)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+
+        pdfRepository.save(mapping);
         return "저장 완료";
     }
 
-    private String sendToPdfUpload(File pdfFile) {
-        System.out.println("요청 URL: " + fastApiUrl);
 
+
+    private String sendToPdfUpload(MultipartFile file) {
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("resume", new FileSystemResource(pdfFile));
+            body.add("resume", new MultipartInputStreamFileResource(
+                    file.getInputStream(),
+                    file.getOriginalFilename(),
+                    file.getSize()
+            ));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(fastApiUrl+"/resumes/upload-pdf", requestEntity, Map.class);
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    fastApiUrl + "/resumes/upload-pdf", requestEntity, Map.class);
 
-            System.out.println("FastAPI 응답: " + response);
             return response.getBody().get("object_id").toString();
 
         } catch (Exception e) {
-            System.err.println("FastAPI 요청 실패: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("FastAPI 업로드 실패", e);
         }
     }
+
 
     public void deleteFastApiPdf(String objectId) {
         try {
@@ -184,7 +182,11 @@ public class PdfService {
         try {
             // 1. form-data 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("resume", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            body.add("resume", new MultipartInputStreamFileResource(
+                    file.getInputStream(),
+                    file.getOriginalFilename(),
+                    file.getSize() // 꼭 필요!
+            ));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -214,7 +216,11 @@ public class PdfService {
         try {
             // 1. 파일 → form-data로 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("job_posting", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            body.add("job_posting", new MultipartInputStreamFileResource(
+                    file.getInputStream(),
+                    file.getOriginalFilename(),
+                    file.getSize() // 꼭 필요!
+            ));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
