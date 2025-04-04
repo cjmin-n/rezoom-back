@@ -16,14 +16,12 @@ public class RefreshTokenService {
     // 사용자별 refreshToken 저장
     public void saveRefreshToken(User user, String refreshToken) {
         Optional<RefreshToken> existing = refreshTokenRepository.findByUser(user);
-        if (existing.isPresent()) {
-            refreshTokenRepository.delete(existing); // 기존 RT 지움
-        }
+        existing.ifPresent(refreshTokenRepository::delete); // 기존 RT 있으면 삭제
 
-        RefreshToken newToken = new RefreshToken();
-        newToken.setUser(user);
-        newToken.setRefreshToken(refreshToken);
-        refreshTokenRepository.save(newToken);
+        RefreshToken newRefreshToken = new RefreshToken();
+        newRefreshToken.setUser(user);
+        newRefreshToken.setRefreshToken(refreshToken);
+        refreshTokenRepository.save(newRefreshToken);
     }
 
     // 사용자의 refreshToken 조회
@@ -40,8 +38,6 @@ public class RefreshTokenService {
     // refreshToken 삭제 (로그아웃 시)
     public void deleteRefreshToken(User user) {
         Optional<RefreshToken> refreshToken = refreshTokenRepository.findByUser(user);
-        if (refreshToken.isPresent()) {
-            refreshTokenRepository.delete(refreshToken);  // DB에서 삭제
-        }
+        refreshToken.ifPresent(refreshTokenRepository::delete);
     }
 }
