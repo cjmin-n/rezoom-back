@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+// RT 재사용 or 발급 + 쿠키 저장
 @Component
 @Slf4j
 @RequiredArgsConstructor

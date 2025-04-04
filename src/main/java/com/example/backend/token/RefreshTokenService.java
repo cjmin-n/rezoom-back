@@ -5,6 +5,8 @@ import com.example.backend.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
@@ -13,14 +15,19 @@ public class RefreshTokenService {
 
     // 사용자별 refreshToken 저장
     public void saveRefreshToken(User user, String refreshToken) {
-        RefreshToken newRefreshToken = new RefreshToken();
-        newRefreshToken.setUser(user);  // 사용자 설정
-        newRefreshToken.setRefreshToken(refreshToken);  // refreshToken 설정
-        refreshTokenRepository.save(newRefreshToken);  // 저장
+        Optional<RefreshToken> existing = refreshTokenRepository.findByUser(user);
+        if (existing.isPresent()) {
+            refreshTokenRepository.delete(existing); // 기존 RT 지움
+        }
+
+        RefreshToken newToken = new RefreshToken();
+        newToken.setUser(user);
+        newToken.setRefreshToken(refreshToken);
+        refreshTokenRepository.save(newToken);
     }
 
     // 사용자의 refreshToken 조회
-    public RefreshToken getRefreshTokenByUser(User user) {
+    public Optional<RefreshToken> getRefreshTokenByUser(User user) {
         return refreshTokenRepository.findByUser(user);  // DB에서 해당 사용자와 연결된 refreshToken 조회
     }
 
@@ -32,8 +39,8 @@ public class RefreshTokenService {
 
     // refreshToken 삭제 (로그아웃 시)
     public void deleteRefreshToken(User user) {
-        RefreshToken refreshToken = refreshTokenRepository.findByUser(user);
-        if (refreshToken != null) {
+        Optional<RefreshToken> refreshToken = refreshTokenRepository.findByUser(user);
+        if (refreshToken.isPresent()) {
             refreshTokenRepository.delete(refreshToken);  // DB에서 삭제
         }
     }
