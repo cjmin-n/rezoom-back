@@ -3,7 +3,7 @@ package com.example.backend.swagger;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.ResumeMatchResultDTO;
-import com.example.backend.dto.SecurityUserDto;
+import com.example.backend.dto.sign.SecurityUserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

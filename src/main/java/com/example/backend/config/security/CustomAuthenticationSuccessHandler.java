@@ -1,14 +1,12 @@
 package com.example.backend.config.security;
 
 import com.example.backend.config.jwt.JwtUtil;
-import com.example.backend.token.GeneratedToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import com.example.backend.dto.SignInResponseDTO;
+import com.example.backend.dto.sign.SignInResponseDTO;
 import com.example.backend.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -77,13 +75,14 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 2주
         response.addCookie(refreshCookie);
 
-        // accessToken과 사용자의 크레딧을 프론트에 JSON으로 전달
+        // accessToken과 사용자 정보를 프론트에 JSON으로 전달
         SignInResponseDTO responseDTO = SignInResponseDTO.builder()
                 .accessToken(accessToken)
                 .isLoggedIn(true)
                 .message("로그인 성공")
                 .email(user.getEmail())
                 .name(user.getName())
+                .phone(user.getPhone())
                 .credit(user.getCredit())
                 .build();
 

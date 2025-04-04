@@ -1,6 +1,6 @@
 package com.example.backend.config.jwt;
 
-import com.example.backend.dto.SecurityUserDto;
+import com.example.backend.dto.sign.SecurityUserDto;
 import com.example.backend.entity.User;
 import com.example.backend.user.UserRepository;
 import io.jsonwebtoken.JwtException;

@@ -3,7 +3,7 @@ package com.example.backend.pdf;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.ResumeMatchResultDTO;
-import com.example.backend.dto.SecurityUserDto;
+import com.example.backend.dto.sign.SecurityUserDto;
 import com.example.backend.swagger.PdfControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
