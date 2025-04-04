@@ -85,6 +85,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                 .name(user.getName())
                 .phone(user.getPhone())
                 .credit(user.getCredit())
+                .role(user.getRole())
                 .build();
 
         response.setContentType("application/json;charset=UTF-8");

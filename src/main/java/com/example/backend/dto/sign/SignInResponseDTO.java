@@ -27,6 +27,9 @@ public class SignInResponseDTO {
     @Schema(description = "메시지", example = "로그인 성공")
     private String message;
 
+    @Schema(description = "사용자 역할", example = "HR")
+    private String role;
+
     @Schema(description = "JWT Access Token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI...")
     private String accessToken;
 

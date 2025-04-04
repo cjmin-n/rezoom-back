@@ -44,13 +44,13 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**", "/uploads/**","/webhook-front","/webhook-back","/files/**").permitAll()
+                        .requestMatchers("/uploads/**","/webhook-front","/webhook-back","/files/**").permitAll()
                         .requestMatchers(
                                 "/auth/login", "/auth/signup", "/auth/token/logout",
                                 "/swagger-ui/**", "/swagger-ui.html",
                                 "/swagger-resources/**", "/webjars/**",
                                 "/v3/api-docs/**",
-                                "/api/**",
+                                "/api/**", "/front-error",
                                 "http://221.148.97.237:8080/**"
                             ).permitAll()
                         .requestMatchers(
