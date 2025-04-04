@@ -1,7 +1,11 @@
 package com.example.backend.payment;
 
+import com.example.backend.config.jwt.JwtUtil;
+import com.example.backend.dto.payment.CreditDTO;
 import com.example.backend.dto.payment.PaymentConfirmRequest;
 import com.example.backend.dto.payment.PaymentResultResponse;
+import com.example.backend.entity.User;
+import com.example.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +18,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
+    private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     @PostMapping("/confirm")
     public ResponseEntity<PaymentResultResponse> confirmPayment(@RequestBody PaymentConfirmRequest request,
@@ -61,4 +67,37 @@ public class PaymentController {
             );
         }
     }
+
+    @PostMapping("/credit")
+    public ResponseEntity<CreditDTO> useCredit(@RequestBody CreditDTO creditDTO,
+                                               @RequestHeader("Authorization") String authHeader) {
+        String accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+
+        try {
+            // 사용자 인증 및 조회
+            User user = jwtUtil.getUserFromToken(accessToken);
+
+            if (user.getCredit() < creditDTO.getAmount()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+
+            // 크레딧 차감
+            int amountUsed = creditDTO.getAmount();
+            user.setCredit(user.getCredit() - amountUsed);
+            userRepository.save(user);
+
+            // 응답 DTO 생성
+            CreditDTO responseDTO = new CreditDTO();
+            responseDTO.setUserId(String.valueOf(user.getId()));
+            responseDTO.setAmount(amountUsed);
+            responseDTO.setBalance(user.getCredit());
+            responseDTO.setApprovedAt(java.time.LocalDateTime.now().toString());
+
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 }
