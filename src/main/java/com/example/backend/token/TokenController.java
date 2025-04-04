@@ -9,13 +9,12 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.Map;
 
 @Slf4j
@@ -140,11 +139,13 @@ public class TokenController implements TokenControllerDocs {
         // 유효한 refreshToken이 있으면 새로운 accessToken 발급
         String newAccessToken = jwtUtil.generateAccessToken(user);
 
+        Date expiresAt = jwtUtil.getExpiration(newAccessToken);
+
         // 결과 DTO 반환
         TokenRefreshRequestDTO responseDTO = TokenRefreshRequestDTO.builder()
                 .status(1)  // 상태 1 -> 성공
                 .accessToken(newAccessToken)  // 새로 발급된 accessToken
-                .refreshToken(refreshToken)  // 기존 refreshToken
+                .expiresAt(expiresAt.toInstant().toString()) // ISO 8601 형태
                 .build();
 
         return ResponseEntity.ok(responseDTO);

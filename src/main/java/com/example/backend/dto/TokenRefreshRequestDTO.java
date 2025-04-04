@@ -20,6 +20,9 @@ public class TokenRefreshRequestDTO {
     @Schema(description = "요청 시 사용된 refreshToken", example = "refresh-token-value")
     private String refreshToken;
 
+    @Schema(description = "accessToken 만료 시간", example = "2025-04-04T01:00:00Z")
+    private String expiresAt;
+
     @Schema(description = "오류 메시지 또는 설명", example = "Invalid or missing refresh token.")
     private String message;
 }

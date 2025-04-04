@@ -117,6 +117,14 @@ public class JwtUtil {
         return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("name", String.class);
     }
 
+    public Date getExpiration(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(secretKey) // 시크릿 키는 기존 verifyToken()과 동일하게
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getExpiration();
+    }
+
     // RefreshToken을 DB에서 조회하여 새로운 AccessToken을 발급
     public String refreshAccessToken(String refreshToken) {
         // DB에서 사용자 정보 조회
