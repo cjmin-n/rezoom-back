@@ -17,9 +17,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -81,6 +83,7 @@ public class PaymentService {
                 .receiptUrl(tossResponse.getReceipt().getUrl())
                 .approvedAt(ZonedDateTime.parse(tossResponse.getApprovedAt()))
                 .user(user)
+                .type("CHARGE")
                 .build();
 
         paymentHistoryRepository.save(history);
@@ -89,5 +92,20 @@ public class PaymentService {
                 "credit", user.getCredit(),
                 "receiptUrl", tossResponse.getReceipt().getUrl()
         );
+    }
+
+    public List<PaymentHistory> getHistoryForUser(User user) {
+        return paymentHistoryRepository.findAllByUserOrderByApprovedAtDesc(user);
+    }
+
+    public void saveUseHistory(User user, int amount) {
+        PaymentHistory history = PaymentHistory.builder()
+                .amount(amount)
+                .approvedAt(ZonedDateTime.from(LocalDateTime.now()))
+                .user(user)
+                .type("USE")
+                .build();
+
+        paymentHistoryRepository.save(history);
     }
 }

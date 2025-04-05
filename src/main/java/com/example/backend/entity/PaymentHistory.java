@@ -24,10 +24,13 @@ public class PaymentHistory {
 
     private String method;
 
+    private String type; // "CHARGE" 또는 "USE"
+
     private String receiptUrl;
 
     private ZonedDateTime approvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
+
 }
