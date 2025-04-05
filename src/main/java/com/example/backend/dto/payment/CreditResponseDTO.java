@@ -16,4 +16,7 @@ public class CreditResponseDTO {
 
     @Schema(description = "사용 승인 시각", example = "2025-03-29T17:45:00")
     private String approvedAt;
+
+    @Schema(description = "충전 or 사용", example = "CHARGE")
+    private String type; // "CHARGE" or "USE"
 }

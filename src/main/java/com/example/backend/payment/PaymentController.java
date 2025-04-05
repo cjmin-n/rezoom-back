@@ -5,6 +5,7 @@ import com.example.backend.dto.payment.CreditRequestDTO;
 import com.example.backend.dto.payment.CreditResponseDTO;
 import com.example.backend.dto.payment.PaymentConfirmRequest;
 import com.example.backend.dto.payment.PaymentResultResponse;
+import com.example.backend.entity.PaymentHistory;
 import com.example.backend.entity.User;
 import com.example.backend.swagger.PaymentControllerDocs;
 import com.example.backend.user.UserRepository;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -85,6 +87,8 @@ public class PaymentController implements PaymentControllerDocs {
         user.setCredit(user.getCredit() - request.getAmount());
         userRepository.save(user);
 
+        paymentService.saveUseHistory(user, request.getAmount());
+
         CreditResponseDTO response = new CreditResponseDTO();
         response.setUserId(String.valueOf(user.getId()));
         response.setAmount(request.getAmount());
@@ -93,5 +97,26 @@ public class PaymentController implements PaymentControllerDocs {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/credit")
+    public ResponseEntity<List<CreditResponseDTO>> getPaymentHistory(@RequestHeader("Authorization") String authHeader) {
+        String accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        User user = jwtUtil.getUserFromToken(accessToken);
+
+        List<PaymentHistory> historyList = paymentService.getHistoryForUser(user);
+
+        List<CreditResponseDTO> responseList = historyList.stream().map(h -> {
+            CreditResponseDTO dto = new CreditResponseDTO();
+            dto.setUserId(String.valueOf(user.getId()));
+            dto.setAmount(h.getAmount());
+            dto.setBalance(user.getCredit());
+            dto.setApprovedAt(String.valueOf(h.getApprovedAt()));
+            dto.setType(h.getType());
+            return dto;
+        }).toList();
+
+        return ResponseEntity.ok(responseList);
+    }
+
 
 }
