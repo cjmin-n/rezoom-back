@@ -1,22 +1,25 @@
 package com.example.backend.payment;
 
 import com.example.backend.config.jwt.JwtUtil;
-import com.example.backend.dto.payment.CreditDTO;
+import com.example.backend.dto.payment.CreditRequestDTO;
+import com.example.backend.dto.payment.CreditResponseDTO;
 import com.example.backend.dto.payment.PaymentConfirmRequest;
 import com.example.backend.dto.payment.PaymentResultResponse;
 import com.example.backend.entity.User;
+import com.example.backend.swagger.PaymentControllerDocs;
 import com.example.backend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/payments")
 @RequiredArgsConstructor
-public class PaymentController {
+public class PaymentController implements PaymentControllerDocs {
     private final PaymentService paymentService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
@@ -69,35 +72,26 @@ public class PaymentController {
     }
 
     @PostMapping("/credit")
-    public ResponseEntity<CreditDTO> useCredit(@RequestBody CreditDTO creditDTO,
-                                               @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<CreditResponseDTO> useCredit(@RequestBody CreditRequestDTO request,
+                                                       @RequestHeader("Authorization") String authHeader) {
         String accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        User user = jwtUtil.getUserFromToken(accessToken);
 
-        try {
-            // 사용자 인증 및 조회
-            User user = jwtUtil.getUserFromToken(accessToken);
-
-            if (user.getCredit() < creditDTO.getAmount()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-            }
-
-            // 크레딧 차감
-            int amountUsed = creditDTO.getAmount();
-            user.setCredit(user.getCredit() - amountUsed);
-            userRepository.save(user);
-
-            // 응답 DTO 생성
-            CreditDTO responseDTO = new CreditDTO();
-            responseDTO.setUserId(String.valueOf(user.getId()));
-            responseDTO.setAmount(amountUsed);
-            responseDTO.setBalance(user.getCredit());
-            responseDTO.setApprovedAt(java.time.LocalDateTime.now().toString());
-
-            return ResponseEntity.ok(responseDTO);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        // 잔액 부족 시
+        if (user.getCredit() < request.getAmount()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
+
+        user.setCredit(user.getCredit() - request.getAmount());
+        userRepository.save(user);
+
+        CreditResponseDTO response = new CreditResponseDTO();
+        response.setUserId(String.valueOf(user.getId()));
+        response.setAmount(request.getAmount());
+        response.setBalance(user.getCredit());
+        response.setApprovedAt(LocalDateTime.now().toString());
+
+        return ResponseEntity.ok(response);
     }
 
 }
