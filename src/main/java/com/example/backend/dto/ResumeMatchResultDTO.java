@@ -8,9 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResumeMatchResultDTO {
-    private String _id;
     private String title;
-    private String description;
-    private double similarity_score;
-    private String gpt_evaluation;
+    private String summary;
+    private double total_score;
+    private String gpt_answer;
 }

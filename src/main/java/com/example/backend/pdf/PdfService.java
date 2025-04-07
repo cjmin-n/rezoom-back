@@ -64,7 +64,6 @@ public class PdfService {
 
         amazonS3.putObject(s3BucketName, key, file.getInputStream(), metadata);
 
-        // ✅ v1 방식으로 S3 URL 얻기
         String fileUrl = amazonS3.getUrl(s3BucketName, key).toString();
         System.out.println("📦 S3 업로드 완료: " + fileUrl);
 

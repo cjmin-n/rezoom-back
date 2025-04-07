@@ -23,9 +23,11 @@ public class UserService {
 
         // 튜토리얼 진행하지 않은 상태로 회원가입
         user.setTutorial(false);
-
         user.setCredit(1000);
-
+        String rawPhone = user.getPhone();
+        if (rawPhone != null) {
+            user.setPhone(rawPhone.replaceAll("-", ""));
+        }
         return userRepository.save(user);
     }
 
@@ -53,5 +55,10 @@ public class UserService {
 
     public Optional<User> findByEmail(String username) {
         return userRepository.findByEmail(username);
+    }
+
+    public boolean existsByEmail(String email) {
+        boolean exists = userRepository.existsByEmail(email);
+        return exists;
     }
 }

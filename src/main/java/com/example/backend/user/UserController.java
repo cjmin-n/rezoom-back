@@ -10,7 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,6 +37,13 @@ public class UserController implements UserControllerDocs {
                         .message("회원가입을 성공했습니다.")
                         .build()
         );
+    }
+    @PostMapping("/auth/check-email")
+    public ResponseEntity<Map<String, Boolean>> checkEmail(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        boolean exists = userService.existsByEmail(email);
+        Map<String, Boolean> response = new HashMap<>();
+        return ResponseEntity.ok(response);
     }
 
     /**
