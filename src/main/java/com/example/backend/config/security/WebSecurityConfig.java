@@ -46,7 +46,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/uploads/**","/webhook-front","/webhook-back","/files/**").permitAll()
                         .requestMatchers(
-                                "/auth/login", "/auth/signup", "/auth/token/logout",
+                                "/auth/login", "/auth/signup", "/auth/token/logout","/auth/check-email",
                                 "/swagger-ui/**", "/swagger-ui.html",
                                 "/swagger-resources/**", "/webjars/**",
                                 "/v3/api-docs/**",

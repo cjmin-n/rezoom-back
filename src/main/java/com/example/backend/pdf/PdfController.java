@@ -67,8 +67,10 @@ public class PdfController implements PdfControllerDocs {
         }
 
         List<ResumeMatchResultDTO> results = pdfService.resume2posting(file);
+        System.out.println(results);
         return ResponseEntity.ok(results);
     }
+
     @PostMapping("/CtoE")
     public ResponseEntity<List<PostingMatchResultDTO>> matchJobPosting(
             @RequestParam("file") MultipartFile file,
@@ -90,7 +92,6 @@ public class PdfController implements PdfControllerDocs {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-
             // 성공적으로 처리 완료
             return ResponseEntity.ok("매칭 성공");
         } catch (Exception e) {

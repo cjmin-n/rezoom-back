@@ -16,6 +16,9 @@ public class SignUpRequestDTO {
     @Schema(description = "비밀번호", example = "securePassword123")
     private String password;
 
+    @Schema(description = "비밀번호 확인", example = "securePassword123")
+    private String confirmPassword;
+
     @Schema(description = "이름", example = "홍길동")
     private String name;
 

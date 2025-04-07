@@ -30,7 +30,7 @@ cloud:
     region:
       static: ap-northeast-2
 toss:
-  secret-key: test_sk_yZqmkKeP8gpY7GJKkjkO3bQRxB9l
+  secret-key: ${TOSS_SECRET_KEY}
 discord:
   bot:
     token: ${DISCORD_BOT_TOKEN}

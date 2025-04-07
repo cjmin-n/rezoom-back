@@ -14,18 +14,16 @@ import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 @Configuration
 public class MongoConfig {
 
-    private final Dotenv dotenv = Dotenv.load(); // ✅ `.env` 파일 로드
-
-
+    private final Dotenv dotenv = Dotenv.load();
     @Bean
     public MongoClient mongoClient() {
-        String uri = EnvUtils.get("MONGO_DB_URI"); // ✅ `.env`에서 MongoDB URI 가져오기
+        String uri = EnvUtils.get("MONGO_DB_URI");
 
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(new ConnectionString(uri))
                 .build();
 
-        return MongoClients.create(settings); // ✅ 최신 방식
+        return MongoClients.create(settings);
     }
 
     @Bean
