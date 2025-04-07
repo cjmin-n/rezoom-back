@@ -37,10 +37,6 @@ public interface PaymentControllerDocs {
     @Operation(
             summary = "크레딧 사용",
             description = "사용자의 크레딧을 차감합니다.",
-            requestBody = @RequestBody(
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = CreditRequestDTO.class))
-            ),
             responses = {
                     @ApiResponse(responseCode = "200", description = "크레딧 차감 성공",
                             content = @Content(schema = @Schema(implementation = CreditResponseDTO.class))),
@@ -49,7 +45,6 @@ public interface PaymentControllerDocs {
             }
     )
     ResponseEntity<CreditResponseDTO> useCredit(
-            @RequestBody CreditRequestDTO request,
             @Parameter(description = "Bearer 액세스 토큰", required = true, example = "Bearer eyJhbGciOi...") String authHeader
     );
 }

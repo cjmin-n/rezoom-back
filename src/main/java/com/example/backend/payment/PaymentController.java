@@ -1,7 +1,6 @@
 package com.example.backend.payment;
 
 import com.example.backend.config.jwt.JwtUtil;
-import com.example.backend.dto.payment.CreditRequestDTO;
 import com.example.backend.dto.payment.CreditResponseDTO;
 import com.example.backend.dto.payment.PaymentConfirmRequest;
 import com.example.backend.dto.payment.PaymentResultResponse;
@@ -74,24 +73,23 @@ public class PaymentController implements PaymentControllerDocs {
     }
 
     @PostMapping("/credit")
-    public ResponseEntity<CreditResponseDTO> useCredit(@RequestBody CreditRequestDTO request,
-                                                       @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<CreditResponseDTO> useCredit(@RequestHeader("Authorization") String authHeader) {
         String accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
         User user = jwtUtil.getUserFromToken(accessToken);
 
         // 잔액 부족 시
-        if (user.getCredit() < request.getAmount()) {
+        if (user.getCredit() < 500) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
-        user.setCredit(user.getCredit() - request.getAmount());
+        user.setCredit(user.getCredit() - 500);
         userRepository.save(user);
 
-        paymentService.saveUseHistory(user, request.getAmount());
+        paymentService.saveUseHistory(user, 500);
 
         CreditResponseDTO response = new CreditResponseDTO();
         response.setUserId(String.valueOf(user.getId()));
-        response.setAmount(request.getAmount());
+        response.setAmount(500);
         response.setBalance(user.getCredit());
         response.setApprovedAt(LocalDateTime.now().toString());
 
