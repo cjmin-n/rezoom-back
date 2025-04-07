@@ -38,12 +38,11 @@ public class UserController implements UserControllerDocs {
                         .build()
         );
     }
-    @PostMapping("/auth/check-email")
-    public ResponseEntity<Map<String, Boolean>> checkEmail(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        boolean exists = userService.existsByEmail(email);
-        Map<String, Boolean> response = new HashMap<>();
-        return ResponseEntity.ok(response);
+    @PostMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestBody String email) {
+        email = email.replaceAll("^\"|\"$", ""); // 앞뒤 큰따옴표 제거
+        boolean exists = userService.existsByEmail(email.trim());
+        return ResponseEntity.ok(!exists);
     }
 
     /**
