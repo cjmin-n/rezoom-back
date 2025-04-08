@@ -23,7 +23,6 @@ public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
-    // 사용자 회원가입 API (POST 요청)
     @PostMapping("/signup")
     public ResponseEntity<UrlResponseDTO> signup(@RequestBody SignUpRequestDTO signUpRequestDTO) {
 
