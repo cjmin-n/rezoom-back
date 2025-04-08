@@ -3,6 +3,8 @@ package com.example.backend.dto.payment;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class CreditResponseDTO {
     @Schema(description = "사용자 ID", example = "42")
@@ -15,7 +17,7 @@ public class CreditResponseDTO {
     private int balance;
 
     @Schema(description = "사용 승인 시각", example = "2025-03-29T17:45:00")
-    private String approvedAt;
+    private LocalDateTime approvedAt;
 
     @Schema(description = "충전 or 사용", example = "CHARGE")
     private String type; // "CHARGE" or "USE"
