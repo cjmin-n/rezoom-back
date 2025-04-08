@@ -66,7 +66,7 @@ public class UserController implements UserControllerDocs {
      *   });
      *
      * **/
-    @PutMapping("/tutorial")
+    @PostMapping("/tutorial")
     public ResponseEntity<?> updateTutorialStatus(@AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         // 인증 정보 확인
         if (authenticatedUser == null) {

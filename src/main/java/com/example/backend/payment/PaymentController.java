@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/payments")
@@ -91,30 +94,51 @@ public class PaymentController implements PaymentControllerDocs {
         response.setUserId(String.valueOf(user.getId()));
         response.setAmount(500);
         response.setBalance(user.getCredit());
-        response.setApprovedAt(LocalDateTime.now().toString());
+        response.setApprovedAt(LocalDateTime.now());
+        response.setType("USE");
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/credit")
-    public ResponseEntity<List<CreditResponseDTO>> getPaymentHistory(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<Map<String, Object>> getPaymentHistory(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
         String accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
         User user = jwtUtil.getUserFromToken(accessToken);
 
         List<PaymentHistory> historyList = paymentService.getHistoryForUser(user);
 
-        List<CreditResponseDTO> responseList = historyList.stream().map(h -> {
-            CreditResponseDTO dto = new CreditResponseDTO();
-            dto.setUserId(String.valueOf(user.getId()));
-            dto.setAmount(h.getAmount());
-            dto.setBalance(user.getCredit());
-            dto.setApprovedAt(String.valueOf(h.getApprovedAt()));
-            dto.setType(h.getType());
-            return dto;
-        }).toList();
+        List<CreditResponseDTO> all = historyList.stream().map(h -> {
+                    CreditResponseDTO dto = new CreditResponseDTO();
+                    dto.setUserId(String.valueOf(user.getId()));
+                    dto.setAmount(h.getAmount());
+                    dto.setBalance(user.getCredit());
+                    dto.setApprovedAt(h.getApprovedAt());
+                    dto.setType(h.getType());
+                    return dto;
+                }).sorted((a, b) -> b.getApprovedAt().compareTo(a.getApprovedAt()))
+                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(responseList);
+        // 🎁 가입 리워드 항목은 마지막에 추가
+        CreditResponseDTO welcome = new CreditResponseDTO();
+        welcome.setUserId(String.valueOf(user.getId()));
+        welcome.setAmount(1000);
+        welcome.setBalance(user.getCredit());
+        welcome.setType("WELCOME");
+        welcome.setApprovedAt(null);
+        all.add(welcome);
+
+        Map<String, Object> result = Map.of(
+                "content", all,
+                "totalElements", all.size(),
+                "totalPages", (int) Math.ceil((double) all.size() / size),
+                "page", page
+        );
+
+        return ResponseEntity.ok(result);
     }
-
 
 }

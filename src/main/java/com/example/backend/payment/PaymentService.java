@@ -81,7 +81,7 @@ public class PaymentService {
                 .amount(amount)
                 .method(tossResponse.getMethod())
                 .receiptUrl(tossResponse.getReceipt().getUrl())
-                .approvedAt(ZonedDateTime.parse(tossResponse.getApprovedAt()))
+                .approvedAt(LocalDateTime.parse(tossResponse.getApprovedAt()))
                 .user(user)
                 .type("CHARGE")
                 .build();
@@ -101,7 +101,7 @@ public class PaymentService {
     public void saveUseHistory(User user, int amount) {
         PaymentHistory history = PaymentHistory.builder()
                 .amount(amount)
-                .approvedAt(ZonedDateTime.from(LocalDateTime.now()))
+                .approvedAt(LocalDateTime.now())
                 .user(user)
                 .type("USE")
                 .build();
