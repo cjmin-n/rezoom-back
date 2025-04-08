@@ -1,5 +1,6 @@
 package com.example.backend.swagger;
 
+import com.example.backend.dto.OneEoneDTO;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.ResumeMatchResultDTO;
@@ -116,7 +117,7 @@ public interface PdfControllerDocs {
                     @ApiResponse(responseCode = "500", description = "매칭 실패")
             }
     )
-    ResponseEntity<String> uploadMultipleFiles(
+    ResponseEntity<List<OneEoneDTO>> uploadMultipleFiles(
             @Parameter(hidden = true) SecurityUserDto user,
             @Parameter(description = "이력서 PDF 파일", required = true)
             MultipartFile file1,

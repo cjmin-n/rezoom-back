@@ -3,9 +3,11 @@ package com.example.backend.pdf;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.backend.config.MultipartInputStreamFileResource;
+import com.example.backend.dto.OneEoneDTO;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.ResumeMatchResultDTO;
+import com.example.backend.dto.sign.SecurityUserDto;
 import com.example.backend.entity.Pdf;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,10 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,7 +83,6 @@ public class PdfService {
     }
 
 
-
     private String sendToPdfUpload(MultipartFile file) {
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -112,7 +110,7 @@ public class PdfService {
 
     public void deleteFastApiPdf(String objectId) {
         try {
-            restTemplate.delete(fastApiUrl+"/resumes/delete_resume/"+objectId);
+            restTemplate.delete(fastApiUrl + "/resumes/delete_resume/" + objectId);
             System.out.println("FastAPI에 PDF 삭제 요청 완료 (ObjectId: " + objectId + ")");
         } catch (Exception e) {
             System.err.println("FastAPI 삭제 요청 실패: " + e.getMessage());
@@ -173,6 +171,7 @@ public class PdfService {
         }
         return "삭제 완료 \nMongoDB: " + mongoDeleted + "\nFile: " + fileDeleted + "\nSQL: " + sqlDeleted;
     }
+
     private String extractFileNameFromUri(String uri) {
         return uri.substring(uri.lastIndexOf("/") + 1);
     }
@@ -203,7 +202,8 @@ public class PdfService {
             // 4. matching_jobs → DTO 리스트로 매핑
             return objectMapper.readValue(
                     jobsNode.toString(),
-                    new TypeReference<List<ResumeMatchResultDTO>>() {}
+                    new TypeReference<List<ResumeMatchResultDTO>>() {
+                    }
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -237,7 +237,8 @@ public class PdfService {
 
             return objectMapper.readValue(
                     resumeList.toString(),
-                    new TypeReference<List<PostingMatchResultDTO>>() {}
+                    new TypeReference<List<PostingMatchResultDTO>>() {
+                    }
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -246,6 +247,55 @@ public class PdfService {
     }
 
 
+    public List<OneEoneDTO> matchResumeAndPosting(MultipartFile resume, MultipartFile posting) throws IOException {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("resume", new MultipartInputStreamFileResource(resume.getInputStream(), resume.getOriginalFilename(), resume.getSize()));
+        body.add("job_posting", new MultipartInputStreamFileResource(posting.getInputStream(), posting.getOriginalFilename(), posting.getSize()));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/resumes/compare_resume_posting", requestEntity, String.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode json = objectMapper.readTree(response.getBody());
+
+        // DTO로 변환
+        OneEoneDTO dto = new OneEoneDTO();
+        dto.setTotal_score(json.get("total_score").asDouble());
+        dto.setSummary(json.get("summary").asText());
+        dto.setGpt_answer(json.get("gpt_answer").asText());
+
+        List<OneEoneDTO> result = new ArrayList<>();
+        result.add(dto);
+
+        return result;
+    }
+
+    public String analyzeWithAgent(String evaluationResult) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("evaluation_result", evaluationResult);
+
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    fastApiUrl + "/agent/analyze",
+                    requestEntity,
+                    String.class
+            );
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode json = objectMapper.readTree(response.getBody());
+
+            return json.get("agent_feedback").asText();
+
+        } catch (Exception e) {
+            throw new RuntimeException("FastAPI 호출 실패: " + e.getMessage());
+        }
+    }
 }
-
-

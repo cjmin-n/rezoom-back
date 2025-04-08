@@ -1,5 +1,6 @@
 package com.example.backend.pdf;
 
+import com.example.backend.dto.OneEoneDTO;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.ResumeMatchResultDTO;
@@ -84,7 +85,7 @@ public class PdfController implements PdfControllerDocs {
         return ResponseEntity.ok(results);
     }
     @PostMapping("/reEpo") //resumeEndposting
-    public ResponseEntity<String> uploadMultipleFiles(
+    public ResponseEntity<List<OneEoneDTO>> uploadMultipleFiles(
             @AuthenticationPrincipal SecurityUserDto user,
             @RequestParam("resume") MultipartFile file1,
             @RequestParam("posting") MultipartFile file2) {
@@ -92,14 +93,24 @@ public class PdfController implements PdfControllerDocs {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            // 성공적으로 처리 완료
-            return ResponseEntity.ok("매칭 성공");
+            List<OneEoneDTO> result = pdfService.matchResumeAndPosting(file1, file2);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("매칭 실패");
+         return ResponseEntity.status(500).body(null);
         }
     }
-
+    @PostMapping("/agent")
+    public ResponseEntity<String> analyzeWithAgent(@RequestBody String evaluationResult) {
+        try {
+            String feedback = pdfService.analyzeWithAgent(evaluationResult);
+            return ResponseEntity.ok(feedback);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("AI 분석 실패");
+        }
+    }
 
     // TODO: 응답형태 페이징객체 논의 필요.
     @GetMapping("/list")
