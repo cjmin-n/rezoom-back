@@ -3,6 +3,7 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -28,7 +29,7 @@ public class PaymentHistory {
 
     private String receiptUrl;
 
-    private ZonedDateTime approvedAt;
+    private LocalDateTime approvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
