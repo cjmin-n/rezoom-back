@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.HashMap;
@@ -74,6 +75,9 @@ public class PaymentService {
         user.setCredit(user.getCredit() + amount);
         userRepository.save(user);
 
+        OffsetDateTime approvedAt = OffsetDateTime.parse(tossResponse.getApprovedAt());
+        LocalDateTime localDateTime = approvedAt.toLocalDateTime();
+
         // 5. 결제 내역 저장
         PaymentHistory history = PaymentHistory.builder()
                 .paymentKey(tossResponse.getPaymentKey())
@@ -81,7 +85,7 @@ public class PaymentService {
                 .amount(amount)
                 .method(tossResponse.getMethod())
                 .receiptUrl(tossResponse.getReceipt().getUrl())
-                .approvedAt(LocalDateTime.parse(tossResponse.getApprovedAt()))
+                .approvedAt(localDateTime)
                 .user(user)
                 .type("CHARGE")
                 .build();
