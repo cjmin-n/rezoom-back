@@ -194,6 +194,8 @@ public class PdfService {
             // 2. FastAPI 호출 (JSON 문자열 응답)
             ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/resumes/match_resume", requestEntity, String.class);
 
+            System.out.println(response);
+
             // 3. JSON 파싱: matching_jobs만 추출
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode root = objectMapper.readTree(response.getBody());
