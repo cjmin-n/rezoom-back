@@ -37,6 +37,7 @@ public class UserController implements UserControllerDocs {
                         .build()
         );
     }
+
     @PostMapping("/check-email")
     public ResponseEntity<Boolean> checkEmail(@RequestBody String email) {
         email = email.replaceAll("^\"|\"$", ""); // 앞뒤 큰따옴표 제거
