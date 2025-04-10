@@ -39,6 +39,25 @@ public interface UserControllerDocs {
     ResponseEntity<UrlResponseDTO> signup(@RequestBody SignUpRequestDTO signUpRequestDTO);
 
     @Operation(
+            summary = "이메일 중복 확인",
+            description = "입력한 이메일이 이미 사용 중인지 확인합니다. (중복이 아니라면 true 반환)",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(schema = @Schema(
+                            type = "string",
+                            description = "검사할 이메일 주소",
+                            example = "\"test@example.com\""
+                    ))
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "중복 확인 완료",
+                            content = @Content(schema = @Schema(implementation = Boolean.class))),
+                    @ApiResponse(responseCode = "500", description = "서버 에러")
+            }
+    )
+    ResponseEntity<Boolean> checkEmail(@RequestBody String email);
+
+    @Operation(
             summary = "튜토리얼 상태 업데이트",
             description = "인증된 사용자의 튜토리얼 상태를 업데이트합니다. (토큰 기반 인증 필요)",
             responses = {

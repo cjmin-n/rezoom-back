@@ -17,18 +17,20 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    private final int welcomeCredit = 1000;
+
     // 사용자 저장
-    public User saveUser(SignUpRequestDTO signUpRequestDTO) {
+    public void saveUser(SignUpRequestDTO signUpRequestDTO) {
         User user = signUpRequestDTO.toUser(bCryptPasswordEncoder);
 
         // 튜토리얼 진행하지 않은 상태로 회원가입
         user.setTutorial(false);
-        user.setCredit(1000);
+        user.setCredit(welcomeCredit);
         String rawPhone = user.getPhone();
         if (rawPhone != null) {
             user.setPhone(rawPhone.replaceAll("-", ""));
         }
-        return userRepository.save(user);
+        userRepository.save(user);
     }
 
     public void tutorialComplete(SecurityUserDto authenticatedUser) {
@@ -60,5 +62,17 @@ public class UserService {
     public boolean existsByEmail(String email) {
         boolean exists = userRepository.existsByEmail(email);
         return exists;
+    }
+
+    public void rollbackCredit(User user, int cost) {
+        // 사용자의 크레딧 차감 금액만큼 롤백
+        user.setCredit(user.getCredit() + cost);
+        userRepository.save(user); // DB에 저장하여 크레딧 롤백
+    }
+
+    public void useCredit(User user, int cost) {
+
+        user.setCredit(user.getCredit() - cost);
+        userRepository.save(user);
     }
 }
