@@ -9,17 +9,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
-//    @Bean
-//    public OpenAPI openAPI() {
-//        return new OpenAPI()
-//                .components(new Components())
-//                .info(apiInfo());
-//    }
-//
-//    private Info apiInfo() {
-//        return new Info()
-//                .title("Auth-Service Swagger")
-//                .description("유저 가입 및 로그인, 토큰 발급 REST API")
-//                .version("1.0.0");
-//    }
+    @Bean
+    public OpenAPI openAPI() {
+        return new OpenAPI()
+                .components(new Components())
+                .info(apiInfo());
+    }
+
+    private Info apiInfo() {
+        return new Info()
+                .title("SpringBoot Swagger")
+                .description("유저, 결제, 토큰 관리 및 fastAPI 연결")
+                .version("1.0.0");
+    }
 }

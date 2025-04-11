@@ -42,7 +42,7 @@ public interface PaymentControllerDocs {
             responses = {
                     @ApiResponse(responseCode = "200", description = "크레딧 차감 성공",
                             content = @Content(schema = @Schema(implementation = CreditResponseDTO.class))),
-                    @ApiResponse(responseCode = "400", description = "잔액 부족 또는 잘못된 요청"),
+                    @ApiResponse(responseCode = "400", description = "잔액 부족"),
                     @ApiResponse(responseCode = "500", description = "서버 오류")
             }
     )
@@ -51,8 +51,21 @@ public interface PaymentControllerDocs {
     );
 
     @Operation(
+            summary = "크레딧 롤백",
+            description = "직전 사용한 500 크레딧을 복구합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "롤백 성공",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "500", description = "롤백 실패")
+            }
+    )
+    ResponseEntity<String> rollbackCredit(
+            @Parameter(description = "Bearer 액세스 토큰", required = true, example = "Bearer eyJhbGciOi...") String authHeader
+    );
+
+    @Operation(
             summary = "결제/크레딧 사용 내역 조회",
-            description = "유저의 결제 및 크레딧 사용 이력을 페이지 기반으로 조회합니다. 마지막에 가입 리워드(WELCOME) 항목이 추가됩니다.",
+            description = "유저의 결제 및 크레딧 사용 이력을 페이지 기반으로 조회합니다. 가입 리워드(WELCOME) 항목도 마지막에 포함됩니다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "조회 성공",
                             content = @Content(schema = @Schema(

@@ -124,4 +124,25 @@ public interface PdfControllerDocs {
             @Parameter(description = "채용공고 PDF 파일", required = true)
             MultipartFile file2
     );
+
+    @Operation(
+            summary = "에이전트 기반 AI 분석",
+            description = "GPT 평가 결과(JSON 문자열)를 받아 에이전트를 통해 AI 피드백을 생성합니다.",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(schema = @Schema(
+                            type = "string",
+                            description = "GPT 평가 결과 (JSON 형태의 문자열)",
+                            example = "{ \"resume_score\": 85, \"summary\": \"경험이 풍부한 백엔드 개발자입니다.\" }"
+                    ))
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "AI 피드백 생성 성공",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "500", description = "AI 분석 실패")
+            }
+    )
+    ResponseEntity<String> analyzeWithAgent(
+            @RequestBody String evaluationResult
+    );
 }
