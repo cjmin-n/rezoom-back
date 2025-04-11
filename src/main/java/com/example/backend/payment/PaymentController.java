@@ -58,7 +58,6 @@ public class PaymentController implements PaymentControllerDocs {
                         null
                 ));
             }
-
             // Toss 관련 오류
             System.err.println("❌ Toss 결제 확인 실패: " + e.getResponseBodyAsString());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
