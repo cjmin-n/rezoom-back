@@ -7,7 +7,6 @@ import com.example.backend.dto.OneEoneDTO;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.ResumeMatchResultDTO;
-import com.example.backend.dto.sign.SecurityUserDto;
 import com.example.backend.entity.Pdf;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
