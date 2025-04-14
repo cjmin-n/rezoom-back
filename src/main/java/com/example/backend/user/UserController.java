@@ -40,6 +40,9 @@ public class UserController implements UserControllerDocs {
 
     @PostMapping("/check-email")
     public ResponseEntity<Boolean> checkEmail(@RequestBody String email) {
+        if(email==null||email.isEmpty()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
         email = email.replaceAll("^\"|\"$", ""); // 앞뒤 큰따옴표 제거
         boolean exists = userService.existsByEmail(email.trim());
         return ResponseEntity.ok(!exists);
