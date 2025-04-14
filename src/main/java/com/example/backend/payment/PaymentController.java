@@ -8,6 +8,7 @@ import com.example.backend.entity.PaymentHistory;
 import com.example.backend.entity.User;
 import com.example.backend.swagger.PaymentControllerDocs;
 import com.example.backend.user.UserService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -157,5 +158,4 @@ public class PaymentController implements PaymentControllerDocs {
 
         return ResponseEntity.ok(result);
     }
-
 }

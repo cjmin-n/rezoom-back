@@ -16,7 +16,7 @@ spring:
     secret: ${JWT_API}
   jpa:
     hibernate:
-      ddl-auto: update  # 개발 중에는 update, 운영에선 validate or none 권장
+      ddl-auto: validate  # 개발 중에는 update, 운영에선 validate or none 권장
     show-sql: true
     properties:
       hibernate:
