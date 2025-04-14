@@ -20,4 +20,5 @@ public class PostingResponseDTO {
     private String name;
     private LocalDate startDay;
     private LocalDate endDay;
+    private String uri;
 }
