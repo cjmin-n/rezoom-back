@@ -3,6 +3,7 @@ package com.example.backend.pdf;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.backend.config.MultipartInputStreamFileResource;
+import com.example.backend.config.aws.S3Uploader;
 import com.example.backend.dto.*;
 import com.example.backend.entity.Pdf;
 import com.example.backend.entity.User;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PdfService {
-
+    private final S3Uploader s3Uploader;
     private static final String fastApiUrl = "http://localhost:8000";
     @Autowired
     private final PdfRepository pdfRepository;
@@ -203,6 +204,11 @@ public class PdfService {
     private String extractFileNameFromUri(String uri) {
         return uri.substring(uri.lastIndexOf("/") + 1);
     }
+    public String extractS3KeyFromUrl(String url) {
+        int idx = url.indexOf(".amazonaws.com/");
+        if (idx == -1) return null;
+        return url.substring(idx + ".amazonaws.com/".length());
+    }
 
     public List<PostingResponseDTO> resume2posting(MultipartFile file) {
         try {
@@ -237,13 +243,18 @@ public class PdfService {
             // 2. 각 XML 마크업 → Map → PostingResponseDTO로 변환
             for (PostingResultWrapper raw : rawArray) {
                 Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
-                String name = pdfRepository.findByMongoObjectId(raw.getObjectId())
-                        .map(pdf -> pdf.getUser().getName())
-                        .orElse("알 수 없음");
+                Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
+                String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
+                String presignedUrl = pdfOpt.map(pdf -> {
+                    String key = extractS3KeyFromUrl(pdf.getPdfUri());
+                    return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
+                }).orElse(null);
+
                 PostingResponseDTO dto = objectMapper.convertValue(parsedXml, PostingResponseDTO.class);
                 dto.setStartDay(raw.getStartDay());
                 dto.setEndDay(raw.getEndDay());
                 dto.setName(name);
+                dto.setUri(presignedUrl);
                 resultList.add(dto);
             }
             return resultList;
@@ -283,11 +294,19 @@ public class PdfService {
 
             for (ResumeResultWrapper raw : rawArray) {
                 Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
-                String name = pdfRepository.findByMongoObjectId(raw.getObjectId())
-                        .map(pdf -> pdf.getUser().getName())
-                        .orElse("알 수 없음");
+
+                Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
+
+                String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
+                String presignedUrl = pdfOpt.map(pdf -> {
+                    String key = extractS3KeyFromUrl(pdf.getPdfUri());
+                    return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
+                }).orElse(null);
+
                 ResumeResponseDTO dto = objectMapper.convertValue(parsedXml, ResumeResponseDTO.class);
                 dto.setName(name);
+                dto.setUri(presignedUrl); // 🔥 프론트에 줄 URL
+
                 resultList.add(dto);
             }
             return resultList;

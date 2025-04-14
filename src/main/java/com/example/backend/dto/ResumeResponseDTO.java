@@ -17,4 +17,5 @@ public class ResumeResponseDTO {
     private String eval_resume;
     private String eval_selfintro;
     private String name;
+    private String uri;
 }
