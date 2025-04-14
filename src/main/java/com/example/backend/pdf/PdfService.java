@@ -229,13 +229,13 @@ public class PdfService {
             List<PostingResponseDTO> resultList = new ArrayList<>();
 
             // 1. 전체 응답을 RawResultWrapper[]로 파싱
-            RawResultWrapper[] rawArray = objectMapper.readValue(
+            PostingResultWrapper[] rawArray = objectMapper.readValue(
                     response.getBody(),
-                    RawResultWrapper[].class
+                    PostingResultWrapper[].class
             );
 
             // 2. 각 XML 마크업 → Map → PostingResponseDTO로 변환
-            for (RawResultWrapper raw : rawArray) {
+            for (PostingResultWrapper raw : rawArray) {
                 Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
                 String name = pdfRepository.findByMongoObjectId(raw.getObjectId())
                         .map(pdf -> pdf.getUser().getName())
@@ -253,7 +253,7 @@ public class PdfService {
         }
     }
 
-    public List<PostingMatchResultDTO> posting2resume(MultipartFile file) {
+    public List<ResumeResponseDTO> posting2resume(MultipartFile file) {
         try {
             // 1. 파일 → form-data로 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -274,14 +274,23 @@ public class PdfService {
 
             // 3. matching_resumes 파싱
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(response.getBody());
-            JsonNode resumeList = root.get("matching_resumes");
+            List<ResumeResponseDTO> resultList = new ArrayList<>();
 
-            return objectMapper.readValue(
-                    resumeList.toString(),
-                    new TypeReference<List<PostingMatchResultDTO>>() {
-                    }
+            ResumeResultWrapper[] rawArray = objectMapper.readValue(
+                    response.getBody(),
+                    ResumeResultWrapper[].class
             );
+
+            for (ResumeResultWrapper raw : rawArray) {
+                Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
+                String name = pdfRepository.findByMongoObjectId(raw.getObjectId())
+                        .map(pdf -> pdf.getUser().getName())
+                        .orElse("알 수 없음");
+                ResumeResponseDTO dto = objectMapper.convertValue(parsedXml, ResumeResponseDTO.class);
+                dto.setName(name);
+                resultList.add(dto);
+            }
+            return resultList;
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();

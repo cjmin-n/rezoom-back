@@ -78,7 +78,7 @@ public class PdfController implements PdfControllerDocs {
     }
 
     @PostMapping("/CtoE")
-    public ResponseEntity<List<PostingMatchResultDTO>> matchJobPosting(
+    public ResponseEntity<List<ResumeResponseDTO>> matchJobPosting(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal SecurityUserDto user
     ) {
@@ -86,7 +86,7 @@ public class PdfController implements PdfControllerDocs {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<PostingMatchResultDTO> results = pdfService.posting2resume(file);
+        List<ResumeResponseDTO> results = pdfService.posting2resume(file);
         return ResponseEntity.ok(results);
     }
     @PostMapping("/reEpo") //resumeEndposting

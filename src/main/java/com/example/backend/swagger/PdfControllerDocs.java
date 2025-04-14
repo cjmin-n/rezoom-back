@@ -3,7 +3,6 @@ package com.example.backend.swagger;
 import com.example.backend.dto.OneEoneDTO;
 import com.example.backend.dto.PdfResponseDTO;
 import com.example.backend.dto.PostingMatchResultDTO;
-import com.example.backend.dto.ResumeMatchResultDTO;
 import com.example.backend.dto.sign.SecurityUserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -99,20 +98,20 @@ public interface PdfControllerDocs {
 //            @Parameter(hidden = true) SecurityUserDto authenticatedUser
 //    );
 
-    @Operation(
-            summary = "채용공고 → 이력서 매칭",
-            description = "업로드된 채용공고를 기준으로 적합한 이력서를 추천합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "매칭 성공",
-                            content = @Content(schema = @Schema(implementation = PostingMatchResultDTO.class))),
-                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
-            }
-    )
-    ResponseEntity<List<PostingMatchResultDTO>> matchJobPosting(
-            @Parameter(description = "채용공고 PDF 파일", required = true)
-            MultipartFile file,
-            @Parameter(hidden = true) SecurityUserDto user
-    );
+//    @Operation(
+//            summary = "채용공고 → 이력서 매칭",
+//            description = "업로드된 채용공고를 기준으로 적합한 이력서를 추천합니다.",
+//            responses = {
+//                    @ApiResponse(responseCode = "200", description = "매칭 성공",
+//                            content = @Content(schema = @Schema(implementation = PostingMatchResultDTO.class))),
+//                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+//            }
+//    )
+//    ResponseEntity<List<PostingMatchResultDTO>> matchJobPosting(
+//            @Parameter(description = "채용공고 PDF 파일", required = true)
+//            MultipartFile file,
+//            @Parameter(hidden = true) SecurityUserDto user
+//    );
 
     @Operation(
             summary = "이력서 + 채용공고 동시 업로드 후 매칭",

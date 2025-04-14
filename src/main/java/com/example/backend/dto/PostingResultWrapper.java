@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class RawResultWrapper {
+public class PostingResultWrapper {
     private String result;
     private String objectId;
     private LocalDate startDay;
