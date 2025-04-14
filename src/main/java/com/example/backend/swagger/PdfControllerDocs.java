@@ -12,36 +12,43 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 @Tag(name = "PDF", description = "PDF 관련 API")
 public interface PdfControllerDocs {
 
-    @Operation(
-            summary = "PDF 업로드",
-            description = "사용자가 PDF 파일을 업로드합니다. (토큰 인증 필요)",
-            requestBody = @RequestBody(
-                    required = true,
-                    content = @Content(mediaType = "multipart/form-data",
-                            schema = @Schema(type = "object", format = "binary", implementation = MultipartFile.class))
-            ),
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "업로드 성공",
-                            content = @Content(schema = @Schema(implementation = String.class))),
-                    @ApiResponse(responseCode = "400", description = "PDF 파일 형식이 아님"),
-                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-                    @ApiResponse(responseCode = "500", description = "서버 오류")
-            }
-    )
-    ResponseEntity<String> uploadSinglePdf(
-            @Parameter(description = "업로드할 PDF 파일", required = true)
-            MultipartFile file,
-            @Parameter(hidden = true) SecurityUserDto authenticatedUser
-    );
+//    @Operation(
+//            summary = "PDF 업로드",
+//            description = "사용자가 PDF 파일을 업로드합니다. (토큰 인증 필요)",
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(mediaType = "multipart/form-data",
+//                            schema = @Schema(type = "object", format = "binary", implementation = MultipartFile.class))
+//            ),
+//            responses = {
+//                    @ApiResponse(responseCode = "200", description = "업로드 성공",
+//                            content = @Content(schema = @Schema(implementation = String.class))),
+//                    @ApiResponse(responseCode = "400", description = "PDF 파일 형식이 아님"),
+//                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+//                    @ApiResponse(responseCode = "500", description = "서버 오류")
+//            }
+//    )
+//    ResponseEntity<String> uploadPostingPdf(
+//            @Parameter(hidden = true) SecurityUserDto authenticatedUser,
+//            @Parameter(description = "채용 시작일", required = true)
+//            @RequestParam("startDay") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDay,
+//            @Parameter(description = "채용 마감일", required = true)
+//            @RequestParam("endDay") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDay,
+//            @Parameter(description = "PDF 파일", required = true)
+//            @RequestParam("file") MultipartFile file
+//    );
 
     @Operation(
             summary = "PDF 삭제",
@@ -77,20 +84,20 @@ public interface PdfControllerDocs {
             @Parameter(hidden = true) SecurityUserDto authenticatedUser
     );
 
-    @Operation(
-            summary = "이력서 → 채용공고 매칭",
-            description = "업로드된 이력서를 기준으로 적합한 채용공고를 추천합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "매칭 성공",
-                            content = @Content(schema = @Schema(implementation = ResumeMatchResultDTO.class))),
-                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
-            }
-    )
-    ResponseEntity<List<ResumeMatchResultDTO>> resume2posting(
-            @Parameter(description = "이력서 PDF 파일", required = true)
-            MultipartFile file,
-            @Parameter(hidden = true) SecurityUserDto authenticatedUser
-    );
+//    @Operation(
+//            summary = "이력서 → 채용공고 매칭",
+//            description = "업로드된 이력서를 기준으로 적합한 채용공고를 추천합니다.",
+//            responses = {
+//                    @ApiResponse(responseCode = "200", description = "매칭 성공",
+//                            content = @Content(schema = @Schema(implementation = ResumeMatchResultDTO.class))),
+//                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+//            }
+//    )
+//    ResponseEntity<List<ResumeMatchResultDTO>> resume2posting(
+//            @Parameter(description = "이력서 PDF 파일", required = true)
+//            MultipartFile file,
+//            @Parameter(hidden = true) SecurityUserDto authenticatedUser
+//    );
 
     @Operation(
             summary = "채용공고 → 이력서 매칭",

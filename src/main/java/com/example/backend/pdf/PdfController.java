@@ -1,12 +1,10 @@
 package com.example.backend.pdf;
 
-import com.example.backend.dto.OneEoneDTO;
-import com.example.backend.dto.PdfResponseDTO;
-import com.example.backend.dto.PostingMatchResultDTO;
-import com.example.backend.dto.ResumeMatchResultDTO;
+import com.example.backend.dto.*;
 import com.example.backend.dto.sign.SecurityUserDto;
 import com.example.backend.swagger.PdfControllerDocs;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -25,14 +24,21 @@ public class PdfController implements PdfControllerDocs {
     private final PdfService pdfService;
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadSinglePdf(@RequestParam("file") MultipartFile file,
+    public ResponseEntity<String> uploadSinglePdf( @RequestParam(value = "startDay", required = false)
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                       LocalDate startDay,
+                                                   @RequestParam(value = "endDay", required = false)
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                       LocalDate endDay,
+                                                  @RequestParam("file") MultipartFile file,
                                                   @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         if (authenticatedUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
         }
         try {
             Long userId = authenticatedUser.getId();
-            String result = pdfService.handlePdfUpload(file, userId);
+            String role =  authenticatedUser.getRole();
+            String result = pdfService.handlePdfUpload(file, userId,role,startDay,endDay);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -59,7 +65,7 @@ public class PdfController implements PdfControllerDocs {
         return ResponseEntity.ok(result);
     }
     @PostMapping("/EtoC") //이력서 to 채용
-    public ResponseEntity<List<ResumeMatchResultDTO>> resume2posting(
+    public ResponseEntity<List<PostingResponseDTO>> resume2posting(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
 
@@ -67,8 +73,7 @@ public class PdfController implements PdfControllerDocs {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<ResumeMatchResultDTO> results = pdfService.resume2posting(file);
-        System.out.println(results);
+        List<PostingResponseDTO> results = pdfService.resume2posting(file);
         return ResponseEntity.ok(results);
     }
 
