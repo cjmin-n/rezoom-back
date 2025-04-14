@@ -298,6 +298,7 @@ public class PdfService {
                 Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
 
                 String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
+                Optional<LocalDateTime> uploadAt = pdfOpt.map(pdf-> pdf.getUploadedAt());
                 String presignedUrl = pdfOpt.map(pdf -> {
                     String key = extractS3KeyFromUrl(pdf.getPdfUri());
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
@@ -305,8 +306,8 @@ public class PdfService {
 
                 ResumeResponseDTO dto = objectMapper.convertValue(parsedXml, ResumeResponseDTO.class);
                 dto.setName(name);
-                dto.setUri(presignedUrl); // 🔥 프론트에 줄 URL
-
+                dto.setUri(presignedUrl);
+                dto.setCreated_at(uploadAt.orElse(null));
                 resultList.add(dto);
             }
             return resultList;
