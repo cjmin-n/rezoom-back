@@ -17,6 +17,9 @@ public class ResumeMatchResultDTO {
     @Schema(description = "요약", example = "지원자의 기술과 직무 요구가 전반적으로 일치합니다.")
     private String summary;
 
+    @Schema(description = "벡터 유사도(1차 필터링)", example = "0.8196")
+    private double similarity_score;
+
     @Schema(description = "총점", example = "91.2")
     private double total_score;
 

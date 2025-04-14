@@ -262,12 +262,13 @@ public class PdfService {
         ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/resumes/compare_resume_posting", requestEntity, String.class);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode json = objectMapper.readTree(response.getBody());
+        System.out.println("📦 FastAPI 응답 JSON: " + json.toPrettyString());
 
-        // DTO로 변환
+        // DTO로 변환, FastAPI 응답 Null 방어
         OneEoneDTO dto = new OneEoneDTO();
-        dto.setTotal_score(json.get("total_score").asDouble());
-        dto.setSummary(json.get("summary").asText());
-        dto.setGpt_answer(json.get("gpt_answer").asText());
+        dto.setTotal_score(json.has("total_score") ? json.get("total_score").asDouble() : 0.0);
+        dto.setSummary(json.has("summary") ? json.get("summary").asText() : "");
+        dto.setGpt_answer(json.has("gpt_answer") ? json.get("gpt_answer").asText() : "");
 
         List<OneEoneDTO> result = new ArrayList<>();
         result.add(dto);
