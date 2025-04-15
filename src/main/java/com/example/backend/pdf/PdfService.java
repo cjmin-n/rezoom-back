@@ -3,11 +3,12 @@ package com.example.backend.pdf;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.backend.config.MultipartInputStreamFileResource;
-import com.example.backend.dto.OneEoneDTO;
-import com.example.backend.dto.PdfResponseDTO;
-import com.example.backend.dto.PostingMatchResultDTO;
-import com.example.backend.dto.ResumeMatchResultDTO;
+import com.example.backend.config.aws.S3Uploader;
+import com.example.backend.dto.*;
 import com.example.backend.entity.Pdf;
+import com.example.backend.entity.User;
+import com.example.backend.user.UserRepository;
+import com.example.backend.utiles.MarkupChange;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,18 +34,19 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PdfService {
-
-    private static final String UPLOAD_DIR = "uploads/";
+    private final S3Uploader s3Uploader;
     private static final String fastApiUrl = "http://localhost:8000";
     @Autowired
     private final PdfRepository pdfRepository;
+    @Autowired
+    private final UserRepository userRepository;
     private final RestTemplate restTemplate;
     @Autowired
     private AmazonS3 amazonS3;
 
     private final String s3BucketName = "rezoombucket-v2";
 
-    public String handlePdfUpload(MultipartFile file, Long userId) throws IOException {
+    public String handlePdfUpload(MultipartFile file, Long userId, String role, LocalDate startDay,LocalDate endDay) throws IOException {
         // 1. 확장자 체크
         if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
             throw new IllegalArgumentException("PDF 파일만 업로드 가능합니다.");
@@ -53,24 +56,25 @@ public class PdfService {
         String originalFileName = file.getOriginalFilename();
         String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
         String uuidFileName = UUID.randomUUID().toString() + extension;
-        String key = "uploads/" + uuidFileName;
 
+        String basePath = role.equals("APPLICANT") ? "resumes/" : "posting/";
+        String key = basePath + uuidFileName;
         // 3. S3 업로드
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType("application/pdf");
         metadata.setContentLength(file.getSize());
-
         amazonS3.putObject(s3BucketName, key, file.getInputStream(), metadata);
-
         String fileUrl = amazonS3.getUrl(s3BucketName, key).toString();
-        System.out.println("📦 S3 업로드 완료: " + fileUrl);
-
-        // 4. FastAPI 전송 (MultipartFile 그대로 사용)
-        String objectId = sendToPdfUpload(file);
-
+        String objectId;
+        if (role.equals("APPLICANT")) {
+            objectId = sendToPdfUpload(file);
+        } else {
+            objectId = sendToPdfUpload(file, startDay, endDay);
+        }
         // 5. DB 저장
+        User user = userRepository.findById(userId).get(); // 조인컬럼이라 이래함 질문 안받슴다
         Pdf mapping = Pdf.builder()
-                .userId(userId)
+                .user(user)
                 .pdfUri(fileUrl)
                 .pdfFileName(originalFileName)
                 .mongoObjectId(objectId)
@@ -103,6 +107,32 @@ public class PdfService {
 
         } catch (Exception e) {
             throw new RuntimeException("FastAPI 업로드 실패", e);
+        }
+    }
+    private String sendToPdfUpload(MultipartFile file, LocalDate startDay, LocalDate endDay) {
+        try {
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("resume", new MultipartInputStreamFileResource(
+                    file.getInputStream(),
+                    file.getOriginalFilename(),
+                    file.getSize()
+            ));
+
+            if (startDay != null) body.add("start_day", startDay.toString()); // "2025-04-14"
+            if (endDay != null) body.add("end_day", endDay.toString());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    fastApiUrl + "/resumes/upload-pdf", requestEntity, Map.class);
+
+            return response.getBody().get("object_id").toString();
+
+        } catch (Exception e) {
+            throw new RuntimeException("FastAPI 업로드 실패 (채용공고)", e);
         }
     }
 
@@ -174,8 +204,13 @@ public class PdfService {
     private String extractFileNameFromUri(String uri) {
         return uri.substring(uri.lastIndexOf("/") + 1);
     }
+    public String extractS3KeyFromUrl(String url) {
+        int idx = url.indexOf(".amazonaws.com/");
+        if (idx == -1) return null;
+        return url.substring(idx + ".amazonaws.com/".length());
+    }
 
-    public List<ResumeMatchResultDTO> resume2posting(MultipartFile file) {
+    public List<PostingResponseDTO> resume2posting(MultipartFile file) {
         try {
             // 1. form-data 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -190,29 +225,46 @@ public class PdfService {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // 2. FastAPI 호출 (JSON 문자열 응답)
-            ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/resumes/match_resume", requestEntity, String.class);
-
-            System.out.println(response);
-
-            // 3. JSON 파싱: matching_jobs만 추출
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(response.getBody());
-            JsonNode jobsNode = root.get("matching_jobs");
-
-            // 4. matching_jobs → DTO 리스트로 매핑
-            return objectMapper.readValue(
-                    jobsNode.toString(),
-                    new TypeReference<List<ResumeMatchResultDTO>>() {
-                    }
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    fastApiUrl + "/resumes/match_resume",
+                    requestEntity,
+                    String.class
             );
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<PostingResponseDTO> resultList = new ArrayList<>();
+
+            // 1. 전체 응답을 RawResultWrapper[]로 파싱
+            PostingResultWrapper[] rawArray = objectMapper.readValue(
+                    response.getBody(),
+                    PostingResultWrapper[].class
+            );
+
+            // 2. 각 XML 마크업 → Map → PostingResponseDTO로 변환
+            for (PostingResultWrapper raw : rawArray) {
+                Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
+                Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
+                String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
+                String presignedUrl = pdfOpt.map(pdf -> {
+                    String key = extractS3KeyFromUrl(pdf.getPdfUri());
+                    return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
+                }).orElse(null);
+
+                PostingResponseDTO dto = objectMapper.convertValue(parsedXml, PostingResponseDTO.class);
+                dto.setStartDay(raw.getStartDay());
+                dto.setEndDay(raw.getEndDay());
+                dto.setName(name);
+                dto.setUri(presignedUrl);
+                resultList.add(dto);
+            }
+            return resultList;
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList(); // 실패 시 빈 리스트 반환
         }
     }
 
-    public List<PostingMatchResultDTO> posting2resume(MultipartFile file) {
+    public List<ResumeResponseDTO> posting2resume(MultipartFile file) {
         try {
             // 1. 파일 → form-data로 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -233,14 +285,32 @@ public class PdfService {
 
             // 3. matching_resumes 파싱
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(response.getBody());
-            JsonNode resumeList = root.get("matching_resumes");
+            List<ResumeResponseDTO> resultList = new ArrayList<>();
 
-            return objectMapper.readValue(
-                    resumeList.toString(),
-                    new TypeReference<List<PostingMatchResultDTO>>() {
-                    }
+            ResumeResultWrapper[] rawArray = objectMapper.readValue(
+                    response.getBody(),
+                    ResumeResultWrapper[].class
             );
+
+            for (ResumeResultWrapper raw : rawArray) {
+                Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
+
+                Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
+
+                String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
+                Optional<LocalDateTime> uploadAt = pdfOpt.map(pdf-> pdf.getUploadedAt());
+                String presignedUrl = pdfOpt.map(pdf -> {
+                    String key = extractS3KeyFromUrl(pdf.getPdfUri());
+                    return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
+                }).orElse(null);
+
+                ResumeResponseDTO dto = objectMapper.convertValue(parsedXml, ResumeResponseDTO.class);
+                dto.setName(name);
+                dto.setUri(presignedUrl);
+                dto.setCreated_at(uploadAt.orElse(null));
+                resultList.add(dto);
+            }
+            return resultList;
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();
