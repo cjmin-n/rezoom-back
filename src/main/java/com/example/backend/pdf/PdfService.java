@@ -41,7 +41,7 @@ public class PdfService {
     @Autowired
     private AmazonS3 amazonS3;
 
-    private final String s3BucketName = "rezoom-bucket-v2";
+    private final String s3BucketName = "rezoombucket-v2";
 
     public String handlePdfUpload(MultipartFile file, Long userId) throws IOException {
         // 1. 확장자 체크
@@ -229,7 +229,7 @@ public class PdfService {
 
             // 2. FastAPI 호출
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    fastApiUrl + "/resumes/match_job_posting", requestEntity, String.class);
+                    fastApiUrl + "/postings/match_job_posting", requestEntity, String.class);
 
             // 3. matching_resumes 파싱
             ObjectMapper objectMapper = new ObjectMapper();
