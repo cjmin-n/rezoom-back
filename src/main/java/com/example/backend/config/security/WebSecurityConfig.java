@@ -15,6 +15,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -34,6 +37,8 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtUtil jwtUtil) throws Exception {
         AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
+//        CsrfTokenRequestAttributeHandler handler = new CsrfTokenRequestAttributeHandler();
+//        handler.setCsrfRequestAttributeName(CsrfToken.class.getName());
 
         JsonUsernamePasswordAuthenticationFilter jsonFilter = new JsonUsernamePasswordAuthenticationFilter(authenticationManager, jwtUtil);
         jsonFilter.setAuthenticationSuccessHandler(successHandler);
@@ -41,12 +46,23 @@ public class WebSecurityConfig {
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정 추가
+//                .csrf(csrf -> csrf
+//                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 프론트가 읽을 수 있어야 하니까 false
+//                        .csrfTokenRequestHandler(handler)
+//                        .ignoringRequestMatchers(
+//                                "/auth/login",
+//                                "/auth/signup",
+//                                "/auth/check-email",
+//                                "/front-error",
+//                                "/payments/**"
+//                        )
+//                )
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/uploads/**","/webhook-front","/webhook-back","/files/**").permitAll()
                         .requestMatchers(
-                                "/auth/login", "/auth/signup", "/auth/token/logout","/auth/check-email",
+                                "/auth/login", "/auth/signup", "/auth/token/logout","/auth/check-email", "/auth/token/refresh", "/auth/token/me",
                                 "/swagger-ui/**", "/swagger-ui.html",
                                 "/swagger-resources/**", "/webjars/**",
                                 "/v3/api-docs/**",

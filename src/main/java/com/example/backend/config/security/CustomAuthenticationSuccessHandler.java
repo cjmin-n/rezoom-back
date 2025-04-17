@@ -11,6 +11,7 @@ import com.example.backend.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+//import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -75,6 +76,16 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 2주
         response.addCookie(refreshCookie);
+
+        // 수동으로 CSRF 토큰 꺼내서 쿠키로 내려보내기
+//        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+//        if (csrfToken != null) {
+//            Cookie cookie = new Cookie("XSRF-TOKEN", csrfToken.getToken());
+//            cookie.setPath("/");
+//            cookie.setHttpOnly(false); // JS에서 읽을 수 있어야 함
+//            cookie.setSecure(true); // 필요 시
+//            response.addCookie(cookie);
+//        }
 
         // accessToken과 사용자 정보를 프론트에 JSON으로 전달
         SignInResponseDTO responseDTO = SignInResponseDTO.builder()
