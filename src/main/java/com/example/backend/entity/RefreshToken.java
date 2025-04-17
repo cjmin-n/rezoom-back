@@ -23,9 +23,4 @@ public class RefreshToken {
 
     @Column(nullable = false)
     private String refreshToken;  // refreshToken 값
-
-    // refreshToken 갱신시 사용할 메소드
-    public void updateRefreshToken(String newRefreshToken) {
-        this.refreshToken = newRefreshToken;
-    }
 }
