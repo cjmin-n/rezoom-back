@@ -146,7 +146,6 @@ public class TokenController implements TokenControllerDocs {
                 .expiresAt(expiresAt.toInstant().toString()) // ISO 8601 형태
                 .build();
 
-        System.out.println("responseDTO = " + responseDTO.getAccessToken());
         return ResponseEntity.ok(responseDTO);
     }
 
