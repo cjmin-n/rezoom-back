@@ -13,6 +13,9 @@ public class TossPaymentResponse {
     @Schema(description = "주문 ID", example = "credit_f6ff27e8-5c05-47a1-a1a3-52a186f03269")
     private String orderId;
 
+    @Schema(description = "결제 상태", example = "DONE")
+    private String status;
+
     @Schema(description = "결제 총액", example = "10000")
     private int totalAmount;
 
