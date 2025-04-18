@@ -43,7 +43,6 @@ public class PdfService {
     private final RestTemplate restTemplate;
     @Autowired
     private AmazonS3 amazonS3;
-
     private final String s3BucketName = "rezoombucket-v2";
 
     public String handlePdfUpload(MultipartFile file, Long userId, String role, LocalDate startDay,LocalDate endDay) throws IOException {
@@ -51,7 +50,6 @@ public class PdfService {
         if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
             throw new IllegalArgumentException("PDF 파일만 업로드 가능합니다.");
         }
-
         // 2. 파일 이름 생성
         String originalFileName = file.getOriginalFilename();
         String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
@@ -66,22 +64,33 @@ public class PdfService {
         amazonS3.putObject(s3BucketName, key, file.getInputStream(), metadata);
         String fileUrl = amazonS3.getUrl(s3BucketName, key).toString();
         String objectId;
-        if (role.equals("APPLICANT")) {
-            objectId = sendToPdfUpload(file);
-        } else {
-            objectId = sendToPdfUpload(file, startDay, endDay);
+        try {
+            if (role.equals("APPLICANT")) {
+                objectId = sendToPdfUpload(file);
+            } else {
+                objectId = sendToPdfUpload(file, startDay, endDay);
+            }
+        } catch (Exception e) {
+            amazonS3.deleteObject(s3BucketName, key);
+            throw new RuntimeException("FastAPI 업로드 실패 - S3 롤백 완료", e);
         }
         // 5. DB 저장
-        User user = userRepository.findById(userId).get(); // 조인컬럼이라 이래함 질문 안받슴다
-        Pdf mapping = Pdf.builder()
-                .user(user)
-                .pdfUri(fileUrl)
-                .pdfFileName(originalFileName)
-                .mongoObjectId(objectId)
-                .uploadedAt(LocalDateTime.now())
-                .build();
+        try {
+            User user = userRepository.findById(userId).get();
+            Pdf mapping = Pdf.builder()
+                    .user(user)
+                    .pdfUri(fileUrl)
+                    .pdfFileName(originalFileName)
+                    .mongoObjectId(objectId)
+                    .uploadedAt(LocalDateTime.now())
+                    .build();
+            pdfRepository.save(mapping);
 
-        pdfRepository.save(mapping);
+        } catch (Exception e) {
+            amazonS3.deleteObject(s3BucketName, key);
+            deleteFastApiPdf(objectId);
+            throw new RuntimeException("RDB 저장 실패 - 전체 롤백 완료", e);
+        }
         return "저장 완료";
     }
 
@@ -120,7 +129,7 @@ public class PdfService {
 
             if (startDay != null) body.add("start_day", startDay.toString()); // "2025-04-14"
             if (endDay != null) body.add("end_day", endDay.toString());
-
+            System.out.println(body);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
@@ -243,29 +252,35 @@ public class PdfService {
             ObjectMapper objectMapper = new ObjectMapper();
             List<PostingResponseDTO> resultList = new ArrayList<>();
 
-            // 1. 전체 응답을 RawResultWrapper[]로 파싱
+// 1. 응답 전체를 PostingResultWrapper[]로 파싱
             PostingResultWrapper[] rawArray = objectMapper.readValue(
                     response.getBody(),
                     PostingResultWrapper[].class
             );
 
-            // 2. 각 XML 마크업 → Map → PostingResponseDTO로 변환
+// 2. 각 result(JSON String)를 DTO로 파싱 + 나머지 필드 수동 세팅
             for (PostingResultWrapper raw : rawArray) {
-                Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
+                // result는 JSON 문자열이므로 다시 파싱 필요
+                PostingResponseDTO dto = objectMapper.readValue(raw.getResult(), PostingResponseDTO.class);
+
+                // objectId로 PDF에서 추가 정보 조회
                 Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
+
                 String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
+
                 String presignedUrl = pdfOpt.map(pdf -> {
                     String key = extractS3KeyFromUrl(pdf.getPdfUri());
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
 
-                PostingResponseDTO dto = objectMapper.convertValue(parsedXml, PostingResponseDTO.class);
                 dto.setStartDay(raw.getStartDay());
                 dto.setEndDay(raw.getEndDay());
                 dto.setName(name);
                 dto.setUri(presignedUrl);
+
                 resultList.add(dto);
             }
+
             return resultList;
         } catch (Exception e) {
             e.printStackTrace();
@@ -282,17 +297,17 @@ public class PdfService {
                     file.getOriginalFilename(),
                     file.getSize() // 꼭 필요!
             ));
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // 2. FastAPI 호출
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    fastApiUrl + "/postings/match_job_posting", requestEntity, String.class);
+                    fastApiUrl + "/postings/match_job_posting",
+                    requestEntity,
+                    String.class
+            );
 
-            // 3. matching_resumes 파싱
             ObjectMapper objectMapper = new ObjectMapper();
             List<ResumeResponseDTO> resultList = new ArrayList<>();
 
@@ -302,23 +317,25 @@ public class PdfService {
             );
 
             for (ResumeResultWrapper raw : rawArray) {
-                Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
+                ResumeResponseDTO dto = objectMapper.readValue(raw.getResult(), ResumeResponseDTO.class);
 
                 Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
 
                 String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
-                Optional<LocalDateTime> uploadAt = pdfOpt.map(pdf-> pdf.getUploadedAt());
+                Optional<LocalDateTime> uploadAt = pdfOpt.map(Pdf::getUploadedAt);
+
                 String presignedUrl = pdfOpt.map(pdf -> {
                     String key = extractS3KeyFromUrl(pdf.getPdfUri());
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
 
-                ResumeResponseDTO dto = objectMapper.convertValue(parsedXml, ResumeResponseDTO.class);
                 dto.setName(name);
                 dto.setUri(presignedUrl);
                 dto.setCreated_at(uploadAt.orElse(null));
+
                 resultList.add(dto);
             }
+
             return resultList;
         } catch (Exception e) {
             e.printStackTrace();
