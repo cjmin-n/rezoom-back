@@ -89,22 +89,24 @@ public class PdfController implements PdfControllerDocs {
         List<ResumeResponseDTO> results = pdfService.posting2resume(file);
         return ResponseEntity.ok(results);
     }
-    @PostMapping("/reEpo") //resumeEndposting
-    public ResponseEntity<List<OneEoneDTO>> uploadMultipleFiles(
+    @PostMapping("/reEpo") // resumeEndPosting
+    public ResponseEntity<List<OneToneDTO>> uploadResumeAndPosting(
             @AuthenticationPrincipal SecurityUserDto user,
-            @RequestParam("resume") MultipartFile file1,
-            @RequestParam("posting") MultipartFile file2) {
+            @RequestParam("resume") MultipartFile resume,
+            @RequestParam("posting") MultipartFile posting) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            List<OneEoneDTO> result = pdfService.matchResumeAndPosting(file1, file2);
+            List<OneToneDTO> result = pdfService.matchResumeAndPosting(resume, posting);
+            System.out.println(result);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
-         return ResponseEntity.status(500).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
     @PostMapping("/agent")
     public ResponseEntity<String> analyzeWithAgent(@RequestBody String evaluationResult) {
         try {

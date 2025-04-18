@@ -1,8 +1,6 @@
 package com.example.backend.swagger;
 
-import com.example.backend.dto.OneEoneDTO;
 import com.example.backend.dto.PdfResponseDTO;
-import com.example.backend.dto.PostingMatchResultDTO;
 import com.example.backend.dto.sign.SecurityUserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,10 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -113,41 +108,41 @@ public interface PdfControllerDocs {
 //            @Parameter(hidden = true) SecurityUserDto user
 //    );
 
-    @Operation(
-            summary = "이력서 + 채용공고 동시 업로드 후 매칭",
-            description = "이력서와 채용공고 PDF를 동시에 업로드하고 매칭 결과를 확인합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "매칭 성공",
-                            content = @Content(schema = @Schema(implementation = String.class))),
-                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-                    @ApiResponse(responseCode = "500", description = "매칭 실패")
-            }
-    )
-    ResponseEntity<List<OneEoneDTO>> uploadMultipleFiles(
-            @Parameter(hidden = true) SecurityUserDto user,
-            @Parameter(description = "이력서 PDF 파일", required = true)
-            MultipartFile file1,
-            @Parameter(description = "채용공고 PDF 파일", required = true)
-            MultipartFile file2
-    );
+//    @Operation(
+//            summary = "이력서 + 채용공고 동시 업로드 후 매칭",
+//            description = "이력서와 채용공고 PDF를 동시에 업로드하고 매칭 결과를 확인합니다.",
+//            responses = {
+//                    @ApiResponse(responseCode = "200", description = "매칭 성공",
+//                            content = @Content(schema = @Schema(implementation = String.class))),
+//                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+//                    @ApiResponse(responseCode = "500", description = "매칭 실패")
+//            }
+//    )
+//    ResponseEntity<List<OneEoneDTO>> uploadMultipleFiles(
+//            @Parameter(hidden = true) SecurityUserDto user,
+//            @Parameter(description = "이력서 PDF 파일", required = true)
+//            MultipartFile file1,
+//            @Parameter(description = "채용공고 PDF 파일", required = true)
+//            MultipartFile file2
+//    );
 
-    @Operation(
-            summary = "에이전트 기반 AI 분석",
-            description = "GPT 평가 결과(JSON 문자열)를 받아 에이전트를 통해 AI 피드백을 생성합니다.",
-            requestBody = @RequestBody(
-                    required = true,
-                    content = @Content(schema = @Schema(
-                            type = "string",
-                            description = "GPT 평가 결과 (JSON 형태의 문자열)",
-                            example = "{ \"resume_score\": 85, \"summary\": \"경험이 풍부한 백엔드 개발자입니다.\" }"
-                    ))
-            ),
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "AI 피드백 생성 성공",
-                            content = @Content(schema = @Schema(implementation = String.class))),
-                    @ApiResponse(responseCode = "500", description = "AI 분석 실패")
-            }
-    )
+//    @Operation(
+//            summary = "에이전트 기반 AI 분석",
+//            description = "GPT 평가 결과(JSON 문자열)를 받아 에이전트를 통해 AI 피드백을 생성합니다.",
+//            requestBody = @RequestBody(
+//                    required = true,
+//                    content = @Content(schema = @Schema(
+//                            type = "string",
+//                            description = "GPT 평가 결과 (JSON 형태의 문자열)",
+//                            example = "{ \"resume_score\": 85, \"summary\": \"경험이 풍부한 백엔드 개발자입니다.\" }"
+//                    ))
+//            ),
+//            responses = {
+//                    @ApiResponse(responseCode = "200", description = "AI 피드백 생성 성공",
+//                            content = @Content(schema = @Schema(implementation = String.class))),
+//                    @ApiResponse(responseCode = "500", description = "AI 분석 실패")
+//            }
+//    )
     ResponseEntity<String> analyzeWithAgent(
             @RequestBody String evaluationResult
     );
