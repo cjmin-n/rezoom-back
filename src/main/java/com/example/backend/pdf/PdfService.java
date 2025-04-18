@@ -12,6 +12,7 @@ import com.example.backend.utiles.MarkupChange;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -43,7 +44,6 @@ public class PdfService {
     private final RestTemplate restTemplate;
     @Autowired
     private AmazonS3 amazonS3;
-
     private final String s3BucketName = "rezoombucket-v2";
 
     public String handlePdfUpload(MultipartFile file, Long userId, String role, LocalDate startDay,LocalDate endDay) throws IOException {
@@ -51,7 +51,6 @@ public class PdfService {
         if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
             throw new IllegalArgumentException("PDF 파일만 업로드 가능합니다.");
         }
-
         // 2. 파일 이름 생성
         String originalFileName = file.getOriginalFilename();
         String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
@@ -66,22 +65,33 @@ public class PdfService {
         amazonS3.putObject(s3BucketName, key, file.getInputStream(), metadata);
         String fileUrl = amazonS3.getUrl(s3BucketName, key).toString();
         String objectId;
-        if (role.equals("APPLICANT")) {
-            objectId = sendToPdfUpload(file);
-        } else {
-            objectId = sendToPdfUpload(file, startDay, endDay);
+        try {
+            if (role.equals("APPLICANT")) {
+                objectId = sendToPdfUpload(file);
+            } else {
+                objectId = sendToPdfUpload(file, startDay, endDay);
+            }
+        } catch (Exception e) {
+            amazonS3.deleteObject(s3BucketName, key);
+            throw new RuntimeException("FastAPI 업로드 실패 - S3 롤백 완료", e);
         }
         // 5. DB 저장
-        User user = userRepository.findById(userId).get(); // 조인컬럼이라 이래함 질문 안받슴다
-        Pdf mapping = Pdf.builder()
-                .user(user)
-                .pdfUri(fileUrl)
-                .pdfFileName(originalFileName)
-                .mongoObjectId(objectId)
-                .uploadedAt(LocalDateTime.now())
-                .build();
+        try {
+            User user = userRepository.findById(userId).get();
+            Pdf mapping = Pdf.builder()
+                    .user(user)
+                    .pdfUri(fileUrl)
+                    .pdfFileName(originalFileName)
+                    .mongoObjectId(objectId)
+                    .uploadedAt(LocalDateTime.now())
+                    .build();
+            pdfRepository.save(mapping);
 
-        pdfRepository.save(mapping);
+        } catch (Exception e) {
+            amazonS3.deleteObject(s3BucketName, key);
+            deleteFastApiPdf(objectId);
+            throw new RuntimeException("RDB 저장 실패 - 전체 롤백 완료", e);
+        }
         return "저장 완료";
     }
 
@@ -120,7 +130,7 @@ public class PdfService {
 
             if (startDay != null) body.add("start_day", startDay.toString()); // "2025-04-14"
             if (endDay != null) body.add("end_day", endDay.toString());
-
+            System.out.println(body);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
@@ -239,34 +249,51 @@ public class PdfService {
                     requestEntity,
                     String.class
             );
+            System.out.println("🔥 FastAPI 응답:\n" + response.getBody());
 
             ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule()); // LocalDate 파싱 지원
+
             List<PostingResponseDTO> resultList = new ArrayList<>();
 
-            // 1. 전체 응답을 RawResultWrapper[]로 파싱
-            PostingResultWrapper[] rawArray = objectMapper.readValue(
+// ✅ 루트가 객체이므로 중간 Wrapper 사용
+            ResumeWrapperResponse wrapper = objectMapper.readValue(
                     response.getBody(),
-                    PostingResultWrapper[].class
+                    ResumeWrapperResponse.class
             );
 
-            // 2. 각 XML 마크업 → Map → PostingResponseDTO로 변환
-            for (PostingResultWrapper raw : rawArray) {
-                Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
+// ✅ wrapper 내부 리스트 반복
+            for (PostingResultWrapper raw : wrapper.getMatchingResumes()) {
+                OneToneDTO result = raw.getResult();  // 이미 매핑된 JSON 객체
+
                 Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
                 String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
+
                 String presignedUrl = pdfOpt.map(pdf -> {
                     String key = extractS3KeyFromUrl(pdf.getPdfUri());
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
 
-                PostingResponseDTO dto = objectMapper.convertValue(parsedXml, PostingResponseDTO.class);
+                // ✅ 응답 DTO 구성
+                PostingResponseDTO dto = new PostingResponseDTO();
+                dto.setTotalScore(result.getTotalScore());
+                dto.setResumeScore(result.getResumeScore());
+                dto.setSelfintroScore(result.getSelfintroScore());
+                dto.setOpinion1(result.getOpinion1());
+                dto.setSummary(result.getSummary());
+                dto.setEvalResume(result.getEvalResume());
+                dto.setEvalSelfintro(result.getEvalSelfintro());
+
                 dto.setStartDay(raw.getStartDay());
                 dto.setEndDay(raw.getEndDay());
                 dto.setName(name);
                 dto.setUri(presignedUrl);
+
                 resultList.add(dto);
             }
+
             return resultList;
+
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList(); // 실패 시 빈 리스트 반환
@@ -282,17 +309,17 @@ public class PdfService {
                     file.getOriginalFilename(),
                     file.getSize() // 꼭 필요!
             ));
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // 2. FastAPI 호출
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    fastApiUrl + "/postings/match_job_posting", requestEntity, String.class);
+                    fastApiUrl + "/postings/match_job_posting",
+                    requestEntity,
+                    String.class
+            );
 
-            // 3. matching_resumes 파싱
             ObjectMapper objectMapper = new ObjectMapper();
             List<ResumeResponseDTO> resultList = new ArrayList<>();
 
@@ -302,23 +329,25 @@ public class PdfService {
             );
 
             for (ResumeResultWrapper raw : rawArray) {
-                Map<String, Object> parsedXml = MarkupChange.parseXmlResult(raw.getResult());
+                ResumeResponseDTO dto = objectMapper.readValue(raw.getResult(), ResumeResponseDTO.class);
 
                 Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
 
                 String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
-                Optional<LocalDateTime> uploadAt = pdfOpt.map(pdf-> pdf.getUploadedAt());
+                Optional<LocalDateTime> uploadAt = pdfOpt.map(Pdf::getUploadedAt);
+
                 String presignedUrl = pdfOpt.map(pdf -> {
                     String key = extractS3KeyFromUrl(pdf.getPdfUri());
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
 
-                ResumeResponseDTO dto = objectMapper.convertValue(parsedXml, ResumeResponseDTO.class);
                 dto.setName(name);
                 dto.setUri(presignedUrl);
                 dto.setCreated_at(uploadAt.orElse(null));
+
                 resultList.add(dto);
             }
+
             return resultList;
         } catch (Exception e) {
             e.printStackTrace();
@@ -327,7 +356,7 @@ public class PdfService {
     }
 
 
-    public List<OneEoneDTO> matchResumeAndPosting(MultipartFile resume, MultipartFile posting) throws IOException {
+    public List<OneToneDTO> matchResumeAndPosting(MultipartFile resume, MultipartFile posting) throws IOException {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("resume", new MultipartInputStreamFileResource(resume.getInputStream(), resume.getOriginalFilename(), resume.getSize()));
         body.add("job_posting", new MultipartInputStreamFileResource(posting.getInputStream(), posting.getOriginalFilename(), posting.getSize()));
@@ -337,21 +366,29 @@ public class PdfService {
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/resumes/compare_resume_posting", requestEntity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                fastApiUrl + "/resumes/compare_resume_posting",
+                requestEntity,
+                String.class
+        );
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode json = objectMapper.readTree(response.getBody());
-        System.out.println("📦 FastAPI 응답 JSON: " + json.toPrettyString());
+        JsonNode root = objectMapper.readTree(response.getBody());
 
-        // DTO로 변환, FastAPI 응답 Null 방어
-        OneEoneDTO dto = new OneEoneDTO();
-        dto.setTotal_score(json.has("total_score") ? json.get("total_score").asDouble() : 0.0);
-        dto.setSummary(json.has("summary") ? json.get("summary").asText() : "");
-        dto.setGpt_answer(json.has("gpt_answer") ? json.get("gpt_answer").asText() : "");
+// JSON 구조: { "result": { "markup": "...", "data": { ... } } }
+        JsonNode resultNode = root.get("result");
+        if (resultNode == null || resultNode.isNull()) {
+            throw new IllegalStateException("응답에 'result' 필드가 없습니다.");
+        }
 
-        List<OneEoneDTO> result = new ArrayList<>();
-        result.add(dto);
+        JsonNode dataNode = resultNode.get("data");
+        if (dataNode == null || dataNode.isNull()) {
+            throw new IllegalStateException("응답에 'data' 필드가 없습니다.");
+        }
 
-        return result;
+        OneToneDTO dto = objectMapper.treeToValue(dataNode, OneToneDTO.class);
+        System.out.println("✅ DTO 매핑 성공: " + dto);
+
+        return List.of(dto);
     }
 
     public String analyzeWithAgent(String evaluationResult) {
