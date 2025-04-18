@@ -1,5 +1,6 @@
 package com.example.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -10,9 +11,9 @@ import java.time.LocalDate;
 public class PostingResultWrapper {
 
     @Schema(description = "결과 상태", example = "성공", required = true)
-    private String result;
+    private OneToneDTO result;
 
-    @Schema(description = "MongoDB에서 생성된 ObjectId", example = "605c72ef153207001f77f2f", required = true)
+    @JsonProperty("object_id")
     private String objectId;
 
     @Schema(description = "채용공고 시작일", example = "2025-03-01", required = false)

@@ -12,6 +12,7 @@ import com.example.backend.utiles.MarkupChange;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -248,30 +249,40 @@ public class PdfService {
                     requestEntity,
                     String.class
             );
+            System.out.println("🔥 FastAPI 응답:\n" + response.getBody());
 
             ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule()); // LocalDate 파싱 지원
+
             List<PostingResponseDTO> resultList = new ArrayList<>();
 
-// 1. 응답 전체를 PostingResultWrapper[]로 파싱
-            PostingResultWrapper[] rawArray = objectMapper.readValue(
+// ✅ 루트가 객체이므로 중간 Wrapper 사용
+            ResumeWrapperResponse wrapper = objectMapper.readValue(
                     response.getBody(),
-                    PostingResultWrapper[].class
+                    ResumeWrapperResponse.class
             );
 
-// 2. 각 result(JSON String)를 DTO로 파싱 + 나머지 필드 수동 세팅
-            for (PostingResultWrapper raw : rawArray) {
-                // result는 JSON 문자열이므로 다시 파싱 필요
-                PostingResponseDTO dto = objectMapper.readValue(raw.getResult(), PostingResponseDTO.class);
+// ✅ wrapper 내부 리스트 반복
+            for (PostingResultWrapper raw : wrapper.getMatchingResumes()) {
+                OneToneDTO result = raw.getResult();  // 이미 매핑된 JSON 객체
 
-                // objectId로 PDF에서 추가 정보 조회
                 Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
-
                 String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
 
                 String presignedUrl = pdfOpt.map(pdf -> {
                     String key = extractS3KeyFromUrl(pdf.getPdfUri());
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
+
+                // ✅ 응답 DTO 구성
+                PostingResponseDTO dto = new PostingResponseDTO();
+                dto.setTotalScore(result.getTotalScore());
+                dto.setResumeScore(result.getResumeScore());
+                dto.setSelfintroScore(result.getSelfintroScore());
+                dto.setOpinion1(result.getOpinion1());
+                dto.setSummary(result.getSummary());
+                dto.setEvalResume(result.getEvalResume());
+                dto.setEvalSelfintro(result.getEvalSelfintro());
 
                 dto.setStartDay(raw.getStartDay());
                 dto.setEndDay(raw.getEndDay());
@@ -282,6 +293,7 @@ public class PdfService {
             }
 
             return resultList;
+
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList(); // 실패 시 빈 리스트 반환
