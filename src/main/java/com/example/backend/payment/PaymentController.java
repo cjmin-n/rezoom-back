@@ -32,7 +32,9 @@ public class PaymentController implements PaymentControllerDocs {
     @PostMapping("/confirm")
     public ResponseEntity<PaymentResultResponse> confirmPayment(@RequestBody PaymentConfirmRequest request,
                                                                 @RequestHeader("Authorization") String authHeader) {
-
+        System.out.println("🔥 요청 진입 성공");
+        System.out.println("request: " + request);
+        System.out.println("authHeader: " + authHeader);
         String accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
 
         try {

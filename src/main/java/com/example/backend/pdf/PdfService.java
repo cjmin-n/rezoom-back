@@ -150,22 +150,31 @@ public class PdfService {
 
 
     public PdfResponseDTO getUserPdfs(Long userId) {
-
-        // TODO: 페이징처리 해줄거라면, findAllByUserId(userId, pageable)로 해줘야됨.
         List<Pdf> pdfList = pdfRepository.findAllByUserId(userId);
 
         List<PdfResponseDTO.PdfInfo> pdfInfos = pdfList.stream()
-                .map(pdf -> new PdfResponseDTO.PdfInfo(
-                        pdf.getId(),
-                        pdf.getPdfFileName(),
-                        pdf.getMongoObjectId(),
-                        pdf.getUploadedAt(),
-                        pdf.getPdfUri()
-                ))
+                .map(pdf -> {
+                    String presignedUrl = Optional.ofNullable(pdf)
+                            .map(p -> {
+                                String key = extractS3KeyFromUrl(p.getPdfUri());
+                                return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
+                            }).orElse(null);
+
+                    // 빌더 패턴을 사용하여 PdfInfo 객체 생성
+                    return PdfResponseDTO.PdfInfo.builder()
+                            .id(pdf.getId())
+                            .pdfFileName(pdf.getPdfFileName())
+                            .mongoObjectId(pdf.getMongoObjectId())
+                            .uploadedAt(pdf.getUploadedAt())
+                            .presignedUrl(presignedUrl)  // presignedUrl 추가
+                            .build();
+                })
                 .collect(Collectors.toList());
+
 
         return new PdfResponseDTO(userId, pdfInfos);
     }
+
 
     public String deletePdfById(Long pdfId, Long userId) {
 
