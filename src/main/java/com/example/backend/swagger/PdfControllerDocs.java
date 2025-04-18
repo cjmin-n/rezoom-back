@@ -1,7 +1,6 @@
 package com.example.backend.swagger;
 
-import com.example.backend.dto.OneEoneDTO;
-import com.example.backend.dto.PdfResponseDTO;
+
 import com.example.backend.dto.PostingResponseDTO;
 import com.example.backend.dto.ResumeResponseDTO;
 import com.example.backend.dto.sign.SecurityUserDto;
@@ -12,10 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -107,6 +103,7 @@ public interface PdfControllerDocs {
             MultipartFile file,
             @Parameter(hidden = true) SecurityUserDto user
     );
+
 
     @Operation(
             summary = "이력서 + 채용공고 동시 업로드 매칭",

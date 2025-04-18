@@ -327,7 +327,7 @@ public class PdfService {
     }
 
 
-    public List<OneEoneDTO> matchResumeAndPosting(MultipartFile resume, MultipartFile posting) throws IOException {
+    public List<OneToneDTO> matchResumeAndPosting(MultipartFile resume, MultipartFile posting) throws IOException {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("resume", new MultipartInputStreamFileResource(resume.getInputStream(), resume.getOriginalFilename(), resume.getSize()));
         body.add("job_posting", new MultipartInputStreamFileResource(posting.getInputStream(), posting.getOriginalFilename(), posting.getSize()));
@@ -337,21 +337,29 @@ public class PdfService {
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(fastApiUrl + "/resumes/compare_resume_posting", requestEntity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                fastApiUrl + "/resumes/compare_resume_posting",
+                requestEntity,
+                String.class
+        );
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode json = objectMapper.readTree(response.getBody());
-        System.out.println("📦 FastAPI 응답 JSON: " + json.toPrettyString());
+        JsonNode root = objectMapper.readTree(response.getBody());
 
-        // DTO로 변환, FastAPI 응답 Null 방어
-        OneEoneDTO dto = new OneEoneDTO();
-        dto.setTotal_score(json.has("total_score") ? json.get("total_score").asDouble() : 0.0);
-        dto.setSummary(json.has("summary") ? json.get("summary").asText() : "");
-        dto.setGpt_answer(json.has("gpt_answer") ? json.get("gpt_answer").asText() : "");
+// JSON 구조: { "result": { "markup": "...", "data": { ... } } }
+        JsonNode resultNode = root.get("result");
+        if (resultNode == null || resultNode.isNull()) {
+            throw new IllegalStateException("응답에 'result' 필드가 없습니다.");
+        }
 
-        List<OneEoneDTO> result = new ArrayList<>();
-        result.add(dto);
+        JsonNode dataNode = resultNode.get("data");
+        if (dataNode == null || dataNode.isNull()) {
+            throw new IllegalStateException("응답에 'data' 필드가 없습니다.");
+        }
 
-        return result;
+        OneToneDTO dto = objectMapper.treeToValue(dataNode, OneToneDTO.class);
+        System.out.println("✅ DTO 매핑 성공: " + dto);
+
+        return List.of(dto);
     }
 
     public String analyzeWithAgent(String evaluationResult) {
