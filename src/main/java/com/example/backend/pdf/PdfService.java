@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PdfService {
     private final S3Uploader s3Uploader;
-    private static final String fastApiUrl = "http://localhost:8000";
+    private static final String fastApiUrl = "https://rezoom.netlify.app/";
     @Autowired
     private final PdfRepository pdfRepository;
     @Autowired
