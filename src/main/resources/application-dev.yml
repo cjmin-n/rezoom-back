@@ -36,4 +36,4 @@ discord:
     token: ${DISCORD_BOT_TOKEN}
 server:
   max-http-request-header-size: 32KB
-  port: 8080  # 운영 환경 포트
+  port: 8080
