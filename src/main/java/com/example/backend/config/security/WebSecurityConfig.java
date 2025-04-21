@@ -67,7 +67,8 @@ public class WebSecurityConfig {
                                 "/swagger-resources/**", "/webjars/**",
                                 "/v3/api-docs/**",
                                 "/api/**", "/front-error",
-                                "http://221.148.97.237:8080/**"
+                                "http://221.148.97.237:8080/**",
+                                "/actuator/health"
                             ).permitAll()
                         .requestMatchers(
                                 "로그인 해야되는 곳들"
