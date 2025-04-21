@@ -8,8 +8,6 @@ import com.example.backend.dto.*;
 import com.example.backend.entity.Pdf;
 import com.example.backend.entity.User;
 import com.example.backend.user.UserRepository;
-import com.example.backend.utiles.MarkupChange;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -99,7 +97,7 @@ public class PdfService {
     private String sendToPdfUpload(MultipartFile file) {
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("resume", new MultipartInputStreamFileResource(
+            body.add("file", new MultipartInputStreamFileResource(
                     file.getInputStream(),
                     file.getOriginalFilename(),
                     file.getSize()
@@ -257,9 +255,9 @@ public class PdfService {
             List<PostingResponseDTO> resultList = new ArrayList<>();
 
 // ✅ 루트가 객체이므로 중간 Wrapper 사용
-            ResumeWrapperResponse wrapper = objectMapper.readValue(
+            EvalWrapperResponse wrapper = objectMapper.readValue(
                     response.getBody(),
-                    ResumeWrapperResponse.class
+                    EvalWrapperResponse.class
             );
 
 // ✅ wrapper 내부 리스트 반복
@@ -302,13 +300,14 @@ public class PdfService {
 
     public List<ResumeResponseDTO> posting2resume(MultipartFile file) {
         try {
-            // 1. 파일 → form-data로 구성
+            // 1. 파일 → form-data 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("job_posting", new MultipartInputStreamFileResource(
                     file.getInputStream(),
                     file.getOriginalFilename(),
-                    file.getSize() // 꼭 필요!
+                    file.getSize()
             ));
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
@@ -321,25 +320,35 @@ public class PdfService {
             );
 
             ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+
             List<ResumeResponseDTO> resultList = new ArrayList<>();
 
-            ResumeResultWrapper[] rawArray = objectMapper.readValue(
+            System.out.println(response.getBody());
+            // ✅ Wrapper 클래스에서 내부 리스트 추출
+            EvalWrapperResponse wrapper = objectMapper.readValue(
                     response.getBody(),
-                    ResumeResultWrapper[].class
+                    EvalWrapperResponse.class
             );
 
-            for (ResumeResultWrapper raw : rawArray) {
-                ResumeResponseDTO dto = objectMapper.readValue(raw.getResult(), ResumeResponseDTO.class);
+            for (ResumeResultWrapper raw : wrapper.getMatchingResume()) {
+                OneToneDTO result = raw.getResult();
 
                 Optional<Pdf> pdfOpt = pdfRepository.findByMongoObjectId(raw.getObjectId());
-
                 String name = pdfOpt.map(pdf -> pdf.getUser().getName()).orElse("알 수 없음");
                 Optional<LocalDateTime> uploadAt = pdfOpt.map(Pdf::getUploadedAt);
-
                 String presignedUrl = pdfOpt.map(pdf -> {
                     String key = extractS3KeyFromUrl(pdf.getPdfUri());
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
+                ResumeResponseDTO dto = new ResumeResponseDTO();
+                dto.setTotalScore(result.getTotalScore());
+                dto.setResumeScore(result.getResumeScore());
+                dto.setSelfintroScore(result.getSelfintroScore());
+                dto.setOpinion1(result.getOpinion1());
+                dto.setSummary(result.getSummary());
+                dto.setEvalResume(result.getEvalResume());
+                dto.setEvalSelfintro(result.getEvalSelfintro());
 
                 dto.setName(name);
                 dto.setUri(presignedUrl);
@@ -349,6 +358,7 @@ public class PdfService {
             }
 
             return resultList;
+
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();
