@@ -3,11 +3,13 @@ package com.example.backend.Monitoring.back;
 import com.example.backend.Monitoring.DiscordNotifier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Builder
 @RestController
 @RequiredArgsConstructor
 public class BackWebhookController {

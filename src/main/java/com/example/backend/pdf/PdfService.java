@@ -120,7 +120,7 @@ public class PdfService {
     private String sendToPdfUpload(MultipartFile file, LocalDate startDay, LocalDate endDay) {
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("resume", new MultipartInputStreamFileResource(
+            body.add("file", new MultipartInputStreamFileResource(
                     file.getInputStream(),
                     file.getOriginalFilename(),
                     file.getSize()
@@ -128,7 +128,7 @@ public class PdfService {
 
             if (startDay != null) body.add("start_day", startDay.toString()); // "2025-04-14"
             if (endDay != null) body.add("end_day", endDay.toString());
-            System.out.println(body);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
@@ -148,9 +148,7 @@ public class PdfService {
     public void deleteFastApiPdf(String objectId) {
         try {
             restTemplate.delete(fastApiUrl + "/resumes/delete_resume/" + objectId);
-            System.out.println("FastAPI에 PDF 삭제 요청 완료 (ObjectId: " + objectId + ")");
         } catch (Exception e) {
-            System.err.println("FastAPI 삭제 요청 실패: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("FastAPI에서 PDF 삭제 실패", e);
         }

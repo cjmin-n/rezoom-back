@@ -1,4 +1,4 @@
-name: Docker Build and Push
+name: Docker Build and Push to ECR
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
       - main
 
 env:
-  DOCKER_HUB_REPOSITORY: sonyeoul/spring-app
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY_URI: 784616196610.dkr.ecr.ap-northeast-2.amazonaws.com/spring-app
 
 jobs:
   build:
@@ -28,19 +29,26 @@ jobs:
           echo "JWT_API=${{ secrets.JWT_API }}" >> .env
           echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> .env
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+          docker login --username AWS --password-stdin ${{ env.ECR_REPOSITORY_URI }}
+
       - name: Set up Docker BuildX
         uses: docker/setup-buildx-action@v2
 
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image to ECR
         run: |
           docker buildx build --platform linux/amd64 \
-            --tag ${{ env.DOCKER_HUB_REPOSITORY }}:latest \
-            --tag ${{ env.DOCKER_HUB_REPOSITORY }}:${{ github.sha }} \
-            --cache-from=type=registry,ref=${{ env.DOCKER_HUB_REPOSITORY }}:cache \
-            --cache-to=type=inline \
+            --tag ${{ env.ECR_REPOSITORY_URI }}:latest \
+            --tag ${{ env.ECR_REPOSITORY_URI }}:${{ github.sha }} \
             --push .
 
       - name: Notify Discord
@@ -50,5 +58,5 @@ jobs:
             -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{
-              "content": "✅ [Spring Backend] Docker 이미지 빌드 및 푸시 완료!\n📁 Repo: ${{ github.repository }}\n🔀 Commit: ${{ github.sha }}\n👤 By: ${{ github.actor }}"
+              "content": "[Spring Backend] ECR 이미지 빌드 및 푸시 완료!\n  Repo: ${{ github.repository }}\n🔀 Commit: ${{ github.sha }}\n👤 By: ${{ github.actor }}"
             }'

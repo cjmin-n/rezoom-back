@@ -99,7 +99,6 @@ public class PdfController implements PdfControllerDocs {
         }
         try {
             List<OneToneDTO> result = pdfService.matchResumeAndPosting(resume, posting);
-            System.out.println(result);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
