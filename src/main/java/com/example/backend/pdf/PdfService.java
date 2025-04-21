@@ -120,7 +120,7 @@ public class PdfService {
     private String sendToPdfUpload(MultipartFile file, LocalDate startDay, LocalDate endDay) {
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("resume", new MultipartInputStreamFileResource(
+            body.add("file", new MultipartInputStreamFileResource(
                     file.getInputStream(),
                     file.getOriginalFilename(),
                     file.getSize()
