@@ -1,6 +1,6 @@
 package com.example.backend.user;
-import com.example.backend.dto.SecurityUserDto;
-import com.example.backend.dto.SignUpRequestDTO;
+import com.example.backend.dto.sign.SecurityUserDto;
+import com.example.backend.dto.sign.SignUpRequestDTO;
 import com.example.backend.dto.UrlResponseDTO;
 import com.example.backend.entity.User;
 import com.example.backend.swagger.UserControllerDocs;
@@ -10,7 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -20,7 +23,6 @@ public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
-    // 사용자 회원가입 API (POST 요청)
     @PostMapping("/signup")
     public ResponseEntity<UrlResponseDTO> signup(@RequestBody SignUpRequestDTO signUpRequestDTO) {
 
@@ -34,6 +36,16 @@ public class UserController implements UserControllerDocs {
                         .message("회원가입을 성공했습니다.")
                         .build()
         );
+    }
+
+    @PostMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestBody String email) {
+        if(email==null||email.isEmpty()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        }
+        email = email.replaceAll("^\"|\"$", ""); // 앞뒤 큰따옴표 제거
+        boolean exists = userService.existsByEmail(email.trim());
+        return ResponseEntity.ok(!exists);
     }
 
     /**
@@ -55,7 +67,7 @@ public class UserController implements UserControllerDocs {
      *   });
      *
      * **/
-    @PutMapping("/tutorial")
+    @PostMapping("/tutorial")
     public ResponseEntity<?> updateTutorialStatus(@AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         // 인증 정보 확인
         if (authenticatedUser == null) {

@@ -1,11 +1,10 @@
 package com.example.backend.pdf;
 
-import com.example.backend.dto.PdfResponseDTO;
-import com.example.backend.dto.PostingMatchResultDTO;
-import com.example.backend.dto.ResumeMatchResultDTO;
-import com.example.backend.dto.SecurityUserDto;
+import com.example.backend.dto.*;
+import com.example.backend.dto.sign.SecurityUserDto;
 import com.example.backend.swagger.PdfControllerDocs;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -24,14 +24,21 @@ public class PdfController implements PdfControllerDocs {
     private final PdfService pdfService;
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadSinglePdf(@RequestParam("file") MultipartFile file,
+    public ResponseEntity<String> uploadSinglePdf( @RequestParam(value = "startDay", required = false)
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                       LocalDate startDay,
+                                                   @RequestParam(value = "endDay", required = false)
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                       LocalDate endDay,
+                                                  @RequestParam("file") MultipartFile file,
                                                   @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         if (authenticatedUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
         }
         try {
             Long userId = authenticatedUser.getId();
-            String result = pdfService.handlePdfUpload(file, userId);
+            String role =  authenticatedUser.getRole();
+            String result = pdfService.handlePdfUpload(file, userId,role,startDay,endDay);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -58,7 +65,7 @@ public class PdfController implements PdfControllerDocs {
         return ResponseEntity.ok(result);
     }
     @PostMapping("/EtoC") //이력서 to 채용
-    public ResponseEntity<List<ResumeMatchResultDTO>> resume2posting(
+    public ResponseEntity<List<PostingResponseDTO>> resume2posting(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
 
@@ -66,11 +73,12 @@ public class PdfController implements PdfControllerDocs {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<ResumeMatchResultDTO> results = pdfService.resume2posting(file);
+        List<PostingResponseDTO> results = pdfService.resume2posting(file);
         return ResponseEntity.ok(results);
     }
+
     @PostMapping("/CtoE")
-    public ResponseEntity<List<PostingMatchResultDTO>> matchJobPosting(
+    public ResponseEntity<List<ResumeResponseDTO>> matchJobPosting(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal SecurityUserDto user
     ) {
@@ -78,29 +86,38 @@ public class PdfController implements PdfControllerDocs {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<PostingMatchResultDTO> results = pdfService.posting2resume(file);
+        List<ResumeResponseDTO> results = pdfService.posting2resume(file);
         return ResponseEntity.ok(results);
     }
-    @PostMapping("/reEpo") //resumeEndposting
-    public ResponseEntity<String> uploadMultipleFiles(
+    @PostMapping("/reEpo") // resumeEndPosting
+    public ResponseEntity<List<OneToneDTO>> uploadResumeAndPosting(
             @AuthenticationPrincipal SecurityUserDto user,
-            @RequestParam("resume") MultipartFile file1,
-            @RequestParam("posting") MultipartFile file2) {
+            @RequestParam("resume") MultipartFile resume,
+            @RequestParam("posting") MultipartFile posting) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-
-            // 성공적으로 처리 완료
-            return ResponseEntity.ok("매칭 성공");
+            List<OneToneDTO> result = pdfService.matchResumeAndPosting(resume, posting);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("매칭 실패");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
+    @PostMapping("/agent")
+    public ResponseEntity<String> analyzeWithAgent(@RequestBody String evaluationResult) {
+        try {
+            String feedback = pdfService.analyzeWithAgent(evaluationResult);
+            return ResponseEntity.ok(feedback);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("AI 분석 실패");
+        }
+    }
 
-    // TODO: 응답형태 페이징객체 논의 필요.
     @GetMapping("/list")
     public ResponseEntity<PdfResponseDTO> getPdf(@AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         if (authenticatedUser == null) {
@@ -110,30 +127,6 @@ public class PdfController implements PdfControllerDocs {
         Long userId = authenticatedUser.getId();
         PdfResponseDTO response = pdfService.getUserPdfs(userId);
 
-        // front에는 이런 형식으로 response 됩니다.
-        /**
-         *
-         * {
-         *   "userId": 3,
-         *   "pdfs": [
-         *     {
-         *       "id": 1,
-         *       "pdfFileName": "3a5b-1234.pdf",
-         *       "mongoObjectId": "6605a2...",
-         *       "uploadedAt": "2025-03-29T10:15:30"
-         *       "pdfUri": "/files/c3bb5efb-ff71-4a08-971d-89c3cc331f78.pdf"
-         *     },
-         *     {
-         *       "id": 2,
-         *       "pdfFileName": "7b2d-abc.pdf",
-         *       "mongoObjectId": "6605a3...",
-         *       "uploadedAt": "2025-03-29T11:25:42"
-         *       "pdfUri": "/files/62d40415-f322-44e9-aebc-b3cf97939831.pdf"
-         *     }
-         *   ]
-         * }
-         *
-         * **/
         return ResponseEntity.ok(response);
     }
 }

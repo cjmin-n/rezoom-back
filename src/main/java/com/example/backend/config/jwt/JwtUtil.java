@@ -3,11 +3,13 @@ package com.example.backend.config.jwt;
 import com.example.backend.entity.User;
 import com.example.backend.token.GeneratedToken;
 import com.example.backend.token.RefreshTokenService;
+import com.example.backend.user.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +19,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.Base64;
 import java.util.Date;
+import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtUtil {
     private final JwtProperties jwtProperties;
+    @Getter
     private final RefreshTokenService refreshTokenService; // RefreshTokenService를 통해 DB에 refresh token 저장 및 조회
+    private final UserRepository userRepository;
     @Getter
     private String secretKey;
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
@@ -71,7 +76,7 @@ public class JwtUtil {
         String role = user.getRole();
         String name = user.getName();
 
-        long accessPeriod = 1000L * 60L * 30L; // 30분
+        long accessPeriod = 1000L * 60L * 120L; // 120분
         Claims claims = Jwts.claims().setSubject(email);
         claims.put("role", role);
         claims.put("name", name);
@@ -107,23 +112,33 @@ public class JwtUtil {
         return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
     }
 
-    // 토큰에서 ROLE을 추출
-    public String getRole(String token) {
-        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("role", String.class);
-    }
-
     public String getName(String token) {
         return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().get("name", String.class);
     }
 
-    // RefreshToken을 DB에서 조회하여 새로운 AccessToken을 발급
-    public String refreshAccessToken(String refreshToken) {
-        // DB에서 사용자 정보 조회
-        User user = refreshTokenService.getUserByRefreshToken(refreshToken); // DB에서 refreshToken으로 사용자 조회
-        if (user != null) {
-            return generateAccessToken(user); // 새로운 AccessToken 발급
+    public Date getExpiration(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(secretKey) // 시크릿 키는 기존 verifyToken()과 동일하게
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getExpiration();
+    }
+
+    public User getUserFromToken(String accessToken) {
+        String email = getUid(accessToken);
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent()) {
+            return user.get();
         } else {
-            throw new IllegalArgumentException("Invalid refresh token");
+            throw new IllegalArgumentException("Invalid access token");
         }
+    }
+
+    public String extractAccessTokenFromRequest(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
+        }
+        return null;
     }
 }

@@ -1,4 +1,4 @@
-package com.example.backend.dto;
+package com.example.backend.dto.sign;
 
 import com.example.backend.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,6 +15,9 @@ public class SignUpRequestDTO {
 
     @Schema(description = "비밀번호", example = "securePassword123")
     private String password;
+
+    @Schema(description = "비밀번호 확인", example = "securePassword123")
+    private String confirmPassword;
 
     @Schema(description = "이름", example = "홍길동")
     private String name;

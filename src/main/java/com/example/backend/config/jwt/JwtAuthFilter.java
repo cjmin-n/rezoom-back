@@ -1,6 +1,6 @@
 package com.example.backend.config.jwt;
 
-import com.example.backend.dto.SecurityUserDto;
+import com.example.backend.dto.sign.SecurityUserDto;
 import com.example.backend.entity.User;
 import com.example.backend.user.UserRepository;
 import io.jsonwebtoken.JwtException;
@@ -21,9 +21,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-@RequiredArgsConstructor
+// AccessToken 검증만 담당, 만료 시 401 응답
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;

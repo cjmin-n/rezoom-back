@@ -1,5 +1,4 @@
 package com.example.backend.config.jwt;
-
 import com.example.backend.dto.StatusResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.JwtException;

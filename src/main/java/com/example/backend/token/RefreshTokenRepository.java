@@ -5,9 +5,13 @@ import com.example.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
-    RefreshToken findByUser(User user);
+    Optional<RefreshToken> findByUser(User user);
 
     RefreshToken findByRefreshToken(String refreshToken);
+
+    void delete(RefreshToken existing);
 }

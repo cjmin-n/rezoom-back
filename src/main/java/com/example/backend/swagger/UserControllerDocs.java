@@ -1,7 +1,7 @@
 package com.example.backend.swagger;
 
-import com.example.backend.dto.SecurityUserDto;
-import com.example.backend.dto.SignUpRequestDTO;
+import com.example.backend.dto.sign.SecurityUserDto;
+import com.example.backend.dto.sign.SignUpRequestDTO;
 import com.example.backend.dto.UrlResponseDTO;
 import com.example.backend.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +37,25 @@ public interface UserControllerDocs {
             }
     )
     ResponseEntity<UrlResponseDTO> signup(@RequestBody SignUpRequestDTO signUpRequestDTO);
+
+    @Operation(
+            summary = "이메일 중복 확인",
+            description = "입력한 이메일이 이미 사용 중인지 확인합니다. (중복이 아니라면 true 반환)",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(schema = @Schema(
+                            type = "string",
+                            description = "검사할 이메일 주소",
+                            example = "\"test@example.com\""
+                    ))
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "중복 확인 완료",
+                            content = @Content(schema = @Schema(implementation = Boolean.class))),
+                    @ApiResponse(responseCode = "500", description = "서버 에러")
+            }
+    )
+    ResponseEntity<Boolean> checkEmail(@RequestBody String email);
 
     @Operation(
             summary = "튜토리얼 상태 업데이트",

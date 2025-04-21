@@ -1,4 +1,4 @@
-package com.example.backend.dto;
+package com.example.backend.dto.sign;
 
 import com.example.backend.entity.User;
 import lombok.Builder;
