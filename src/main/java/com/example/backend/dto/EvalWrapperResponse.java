@@ -6,7 +6,9 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ResumeWrapperResponse {
+public class EvalWrapperResponse {
     @JsonProperty("matching_resumes")
     private List<PostingResultWrapper> matchingResumes;
+    @JsonProperty("matching_resume")
+    private List<ResumeResultWrapper> matchingResume;
 }

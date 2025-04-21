@@ -1,5 +1,6 @@
 package com.example.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,26 +14,26 @@ import java.time.LocalDateTime;
 @Schema(description = "이력서 매칭 결과 DTO")
 public class ResumeResponseDTO {
 
-    @Schema(description = "전체 매칭 점수", example = "85", required = true)
-    private int total_score;
+    @JsonProperty("total_score")
+    private String totalScore;
 
-    @Schema(description = "이력서 매칭 점수", example = "90", required = true)
-    private int resume_score;
+    @JsonProperty("resume_score")
+    private String resumeScore;
 
-    @Schema(description = "자기소개서 매칭 점수", example = "80", required = true)
-    private int selfintro_score;
+    @JsonProperty("selfintro_score")
+    private String selfintroScore;
 
-    @Schema(description = "1차 평가 의견", example = "지원자는 기술적으로 매우 적합합니다.", required = true)
+    @JsonProperty("opinion1")
     private String opinion1;
 
-    @Schema(description = "매칭 결과 요약", example = "이 후보자는 전반적으로 요구사항을 충족하며, 해당 직무에 적합한 경험을 가지고 있습니다.", required = true)
+    @JsonProperty("summary")
     private String summary;
 
-    @Schema(description = "이력서 평가 내용", example = "이력서는 매우 강력하며, 특히 Python 관련 경험이 뛰어납니다.", required = true)
-    private String eval_resume;
+    @JsonProperty("eval_resume")
+    private String evalResume;
 
-    @Schema(description = "자기소개서 평가 내용", example = "자기소개서는 경험을 잘 요약하고 있으며, 직무에 대한 열정이 잘 드러나 있습니다.", required = true)
-    private String eval_selfintro;
+    @JsonProperty("eval_selfintro")
+    private String evalSelfintro;
 
     @Schema(description = "지원자의 이름", example = "김민수", required = true)
     private String name;
