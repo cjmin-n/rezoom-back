@@ -41,10 +41,8 @@ public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
                     // 이미 유효한 토큰이 존재하므로, 토큰 내부에서 사용자 정보를 추출하고
                     // 인증 객체를 생성하여 반환합니다.
                     String email = jwtUtil.getUid(token);
-                    // 여기서는 기본 USER 권한으로 설정합니다.
                     UsernamePasswordAuthenticationToken existingAuth =
-                            new UsernamePasswordAuthenticationToken(email, null,
-                                    List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                            new UsernamePasswordAuthenticationToken(email, null, null);
                     existingAuth.setAuthenticated(true);
                     return existingAuth;
                 }

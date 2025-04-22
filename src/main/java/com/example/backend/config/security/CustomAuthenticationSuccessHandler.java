@@ -48,10 +48,12 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 기존 refreshToken 유효성 검증
         boolean reuseRefreshToken = false;
+        // 쿠키에 RT가 있고, 만료시간이 지나지 않았다면,
         if (existingRefreshToken != null && jwtUtil.verifyToken(existingRefreshToken)) {
             try {
                 // DB에도 존재해야 함
                 User tokenOwner = jwtUtil.getRefreshTokenService().getUserByRefreshToken(existingRefreshToken);
+                // 토큰의 사용자와, 실제 사용자가 같다면, 토큰 재사용 가능
                 if (tokenOwner != null && tokenOwner.getEmail().equals(user.getEmail())) {
                     reuseRefreshToken = true;
                 }
