@@ -112,9 +112,12 @@ public class PdfService {
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     fastApiUrl + "/resumes/upload-pdf", requestEntity, Map.class);
 
+            System.out.println("[✅ FastAPI 응답]: " + response);  // ✅ 응답 로깅
             return response.getBody().get("object_id").toString();
 
         } catch (Exception e) {
+            System.out.println("[❌ FastAPI 요청 실패]");
+            e.printStackTrace();  // ✅ 반드시 출력
             throw new RuntimeException("FastAPI 업로드 실패", e);
         }
     }
