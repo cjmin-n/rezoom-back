@@ -49,6 +49,7 @@ public class PdfService {
         if (!file.getOriginalFilename().toLowerCase().endsWith(".pdf")) {
             throw new IllegalArgumentException("PDF 파일만 업로드 가능합니다.");
         }
+        System.out.println(fastApiUrl);
         // 2. 파일 이름 생성
         String originalFileName = file.getOriginalFilename();
         String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
