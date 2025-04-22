@@ -13,7 +13,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,32 +24,24 @@ public class PdfController implements PdfControllerDocs {
     private final PdfService pdfService;
 
     @PostMapping("/upload")
-    public ResponseEntity<Map<String, String>> uploadSinglePdf(
-            @RequestParam(value = "startDay", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDay,
-            @RequestParam(value = "endDay", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDay,
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
-
+    public ResponseEntity<String> uploadSinglePdf( @RequestParam(value = "startDay", required = false)
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                       LocalDate startDay,
+                                                   @RequestParam(value = "endDay", required = false)
+                                                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                       LocalDate endDay,
+                                                  @RequestParam("file") MultipartFile file,
+                                                  @AuthenticationPrincipal SecurityUserDto authenticatedUser) {
         if (authenticatedUser == null) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "인증 정보가 없습니다.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
         }
-
         try {
             Long userId = authenticatedUser.getId();
-            String role = authenticatedUser.getRole();
-            String result = pdfService.handlePdfUpload(file, userId, role, startDay, endDay);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", result);
-            return ResponseEntity.ok(response);
+            String role =  authenticatedUser.getRole();
+            String result = pdfService.handlePdfUpload(file, userId,role,startDay,endDay);
+            return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
