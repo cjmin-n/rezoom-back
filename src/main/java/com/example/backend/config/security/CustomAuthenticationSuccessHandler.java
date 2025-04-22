@@ -72,10 +72,21 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         // refreshToken을 다시 쿠키로 저장
         Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true); // 로컬에서는 false 가능
+        refreshCookie.setSecure(true); // 로컬은 false, 배포는 true
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 2주
+
+        // response에 기본 쿠키 추가 (중복 방지용)
         response.addCookie(refreshCookie);
+
+        // SameSite=None 설정을 위해 헤더 수동 추가
+        String cookieHeader = String.format(
+                "refreshToken=%s; Max-Age=%d; Path=/; Secure; HttpOnly; SameSite=None",
+                refreshToken,
+                60 * 60 * 24 * 14
+        );
+        response.setHeader("Set-Cookie", cookieHeader);
+
 
         // 수동으로 CSRF 토큰 꺼내서 쿠키로 내려보내기
 //        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
