@@ -6,12 +6,7 @@ management:
   endpoint:
     health:
       show-details: always
-
 spring:
-  security:
-    user:
-      name: actuator
-      password: actuatorpass
   servlet:
     multipart:
       max-request-size: 5MB
