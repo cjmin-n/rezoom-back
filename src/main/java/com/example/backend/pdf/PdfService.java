@@ -395,7 +395,7 @@ public class PdfService {
         }
 
         OneToneDTO dto = objectMapper.treeToValue(dataNode, OneToneDTO.class);
-        System.out.println("✅ DTO 매핑 성공: " + dto);
+        System.out.println("DTO 매핑 성공: " + dto);
 
         return List.of(dto);
     }
