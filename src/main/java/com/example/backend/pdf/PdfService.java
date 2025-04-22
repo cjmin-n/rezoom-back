@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.backend.config.MultipartInputStreamFileResource;
 import com.example.backend.config.aws.S3Uploader;
 import com.example.backend.dto.*;
+import com.example.backend.dto.AgentFeedbackDTO;
 import com.example.backend.entity.Pdf;
 import com.example.backend.entity.User;
 import com.example.backend.user.UserRepository;
@@ -399,15 +400,18 @@ public class PdfService {
         return List.of(dto);
     }
 
-    public String analyzeWithAgent(String evaluationResult) {
+    public AgentFeedbackDTO analyzeWithAgent(String resumeEval, String selfintroEval, int resumeScore, int selfintroScore) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("evaluation_result", evaluationResult);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("resume_eval", resumeEval);
+            requestBody.put("selfintro_eval", selfintroEval);
+            requestBody.put("resume_score", resumeScore);
+            requestBody.put("selfintro_score", selfintroScore);
 
-            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
             ResponseEntity<String> response = restTemplate.postForEntity(
                     fastApiUrl + "/agent/analyze",
@@ -416,9 +420,15 @@ public class PdfService {
             );
 
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode json = objectMapper.readTree(response.getBody());
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode feedbackNode = root.get("agent_feedback");
 
-            return json.get("agent_feedback").asText();
+            return AgentFeedbackDTO.builder()
+                    .type(feedbackNode.get("type").asText())
+                    .message(feedbackNode.get("message").asText())
+                    .gapText(feedbackNode.get("gap_text").asText())
+                    .planText(feedbackNode.get("plan_text").asText())
+                    .build();
 
         } catch (Exception e) {
             throw new RuntimeException("FastAPI 호출 실패: " + e.getMessage());
