@@ -1,34 +1,57 @@
-#name: Deploy to Server
-#
-#on:
-#  workflow_run:
-#    workflows: ["Docker Build and Push"]
-#    types:
-#      - completed
-#
-#jobs:
-#  deploy:
-#    name: Deploy Container
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      # 1️⃣ GitHub Repository Checkout
-#      - name: Checkout repository
-#        uses: actions/checkout@v3
-#
-#      # 2️⃣ Docker Hub에서 최신 이미지 Pull
-#      - name: Pull latest Docker image
-#        run: docker pull sonyeoul/spring-app:latest
-#
-#      # 3️⃣ 기존 컨테이너 정리 (실행 중이면 중지 & 삭제)
-#      - name: Stop and remove old container
-#        run: |
-#          docker stop spring-app || true
-#          docker rm spring-app || true
-#
-#      # 4️⃣ 새 컨테이너 실행 (환경 변수는 application-prod.yml에서 처리)
-#      - name: Run new container
-#        run: |
-#          docker run -d --name spring-app -p 9000:9000 \
-#            -e SPRING_PROFILES_ACTIVE=prod \
-#            sonyeoul/spring-app:latest
+name: Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["Docker Build and Push to ECR"]
+    types:
+      - completed
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: spring-app
+  ECS_CLUSTER: spring-app-cluster
+  ECS_SERVICE: spring-server
+  TASK_DEFINITION_FILE: .aws/task-definition.json
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+          docker login --username AWS --password-stdin \
+          784616196610.dkr.ecr.ap-northeast-2.amazonaws.com
+
+      - name: Build and Push Docker image
+        run: |
+          docker build -t ${{ env.ECR_REPOSITORY }}:latest .
+          docker tag ${{ env.ECR_REPOSITORY }}:latest \
+            784616196610.dkr.ecr.ap-northeast-2.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          docker push 784616196610.dkr.ecr.ap-northeast-2.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Render new task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.TASK_DEFINITION_FILE }}
+          container-name: spring-app
+          image: 784616196610.dkr.ecr.ap-northeast-2.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          task-definition: ${{ steps.render.outputs.task-definition }}
