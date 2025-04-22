@@ -1,9 +1,6 @@
 package com.example.backend.swagger;
 
-
-import com.example.backend.dto.PdfResponseDTO;
-import com.example.backend.dto.PostingResponseDTO;
-import com.example.backend.dto.ResumeResponseDTO;
+import com.example.backend.dto.*;
 import com.example.backend.dto.sign.SecurityUserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -108,21 +105,20 @@ public interface PdfControllerDocs {
 //            @Parameter(hidden = true) SecurityUserDto user
 //    );
 //
-//
 //    @Operation(
 //            summary = "이력서 + 채용공고 동시 업로드 매칭",
 //            description = "이력서와 채용공고를 동시에 업로드하여 1:1 매칭 결과를 반환합니다.",
 //            responses = {
 //                    @ApiResponse(responseCode = "200", description = "매칭 성공",
-//                            content = @Content(schema = @Schema(implementation = OneEoneDTO.class))),
+//                            content = @Content(schema = @Schema(implementation = OneToneDTO.class))),
 //                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
 //                    @ApiResponse(responseCode = "500", description = "매칭 실패")
 //            }
 //    )
-//    ResponseEntity<List<OneEoneDTO>> uploadMultipleFiles(
+//    ResponseEntity<List<OneToneDTO>> uploadResumeAndPosting(
 //            @Parameter(hidden = true) SecurityUserDto user,
-//            @Parameter(description = "이력서 PDF 파일", required = true) MultipartFile file1,
-//            @Parameter(description = "채용공고 PDF 파일", required = true) MultipartFile file2
+//            @Parameter(description = "이력서 PDF 파일", required = true) MultipartFile resume,
+//            @Parameter(description = "채용공고 PDF 파일", required = true) MultipartFile posting
 //    );
 //
 //    @Operation(
