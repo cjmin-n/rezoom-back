@@ -12,4 +12,5 @@ public class AgentFeedbackDTO {
     private String message;
     private String gapText;
     private String planText;
+    private String selfIntroFeedback;
 }
