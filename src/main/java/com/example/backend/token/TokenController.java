@@ -32,7 +32,6 @@ public class TokenController implements TokenControllerDocs {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader, HttpServletResponse response) {
 
-        System.out.println("authHeader = " + authHeader);
         try {
             if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
                 authHeader = authHeader.substring(7);
@@ -70,40 +69,49 @@ public class TokenController implements TokenControllerDocs {
     // front에서 refreshToken을 보내서 갱신하려는 경우에.
     // 프론트에서 refreshToken 넘겨주고 갱신하는 부분.
     @PostMapping("/refresh")
-    public ResponseEntity<TokenRefreshRequestDTO> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+    public ResponseEntity<TokenRefreshRequestDTO> refreshToken(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-        // refreshToken이 유효한지 검증
-        if (refreshToken == null || !jwtUtil.verifyToken(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(TokenRefreshRequestDTO.builder()
-                            .status(0)  // 상태 0 -> 오류 발생
-                            .message("Invalid or missing refresh token.")
-                            .build());
-        }
+        try {
+            // 1. refreshToken 존재 여부 및 유효성 검증
+            if (refreshToken == null || !jwtUtil.verifyToken(refreshToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(TokenRefreshRequestDTO.builder()
+                                .status(0)  // 상태 0 -> 오류 발생
+                                .message("Invalid or missing refresh token.")
+                                .build());
+            }
 
-        // refreshToken 으로 사용자 조회
-        User user = refreshTokenService.getUserByRefreshToken(refreshToken);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            // 2. refreshToken을 통해 사용자 정보 조회 (DB에 있는지 확인)
+            User user = refreshTokenService.getUserByRefreshToken(refreshToken);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(TokenRefreshRequestDTO.builder()
+                                .status(0)
+                                .message("User not found for the provided refresh token.")
+                                .build());
+            }
+
+            // 3. 유효한 refreshToken이 있다면 새로운 accessToken 발급
+            String newAccessToken = jwtUtil.generateAccessToken(user);
+            Date expiresAt = jwtUtil.getExpiration(newAccessToken); // 토큰 만료 시간 추출
+
+            // 4. 클라이언트에 accessToken과 만료 시간 응답
+            return ResponseEntity.ok(TokenRefreshRequestDTO.builder()
+                    .status(1)  // 상태 1 -> 성공
+                    .accessToken(newAccessToken)
+                    .expiresAt(expiresAt.toInstant().toString()) // ISO 8601 형식
+                    .build());
+
+        } catch (Exception e) {
+            // 5. 서버 내부 오류 발생 시 500 응답
+            log.error("Token refresh error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(TokenRefreshRequestDTO.builder()
                             .status(0)
-                            .message("User not found for the provided refresh token.")
+                            .message("Internal server error during token refresh.")
                             .build());
         }
-
-        // 유효한 refreshToken이 있으면 새로운 accessToken 발급
-        String newAccessToken = jwtUtil.generateAccessToken(user);
-
-        Date expiresAt = jwtUtil.getExpiration(newAccessToken);
-
-        // 결과 DTO 반환
-        TokenRefreshRequestDTO responseDTO = TokenRefreshRequestDTO.builder()
-                .status(1)  // 상태 1 -> 성공
-                .accessToken(newAccessToken)  // 새로 발급된 accessToken
-                .expiresAt(expiresAt.toInstant().toString()) // ISO 8601 형태
-                .build();
-
-        return ResponseEntity.ok(responseDTO);
     }
 
     @GetMapping("/me")

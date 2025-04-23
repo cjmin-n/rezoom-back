@@ -69,12 +69,6 @@ public class WebSecurityConfig {
                                 "/api/**", "/front-error",
                                 "http://221.148.97.237:8080/**"
                             ).permitAll()
-                        .requestMatchers(
-                                "로그인 해야되는 곳들"
-                        ).authenticated()
-                        .requestMatchers(
-                                "관리자만 접근할 수 있는 곳들"
-                        ).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterAt(jsonFilter, UsernamePasswordAuthenticationFilter.class); // json로그인 처리 - /auth/login (3)

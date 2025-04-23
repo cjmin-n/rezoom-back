@@ -228,6 +228,7 @@ public class PdfService {
 
     public List<PostingResponseDTO> resume2posting(MultipartFile file) {
         try {
+            System.out.println("file: " + file.getOriginalFilename());
             // 1. form-data 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("resume", new MultipartInputStreamFileResource(
@@ -259,6 +260,8 @@ public class PdfService {
                     EvalWrapperResponse.class
             );
 
+
+            String resumeText = wrapper.getResumeText();
 // ✅ wrapper 내부 리스트 반복
             for (PostingResultWrapper raw : wrapper.getMatchingResumes()) {
                 OneToneDTO result = raw.getResult();  // 이미 매핑된 JSON 객체
@@ -273,6 +276,7 @@ public class PdfService {
 
                 // ✅ 응답 DTO 구성
                 PostingResponseDTO dto = new PostingResponseDTO();
+                dto.setResumeText(resumeText);
                 dto.setTotalScore(result.getTotalScore());
                 dto.setResumeScore(result.getResumeScore());
                 dto.setSelfintroScore(result.getSelfintroScore());
@@ -400,7 +404,7 @@ public class PdfService {
         return List.of(dto);
     }
 
-    public AgentFeedbackDTO analyzeWithAgent(String resumeEval, String selfintroEval, int resumeScore, int selfintroScore) {
+    public AgentFeedbackDTO analyzeWithAgent(String resumeEval, String selfintroEval, int resumeScore, int selfintroScore, String resumeText) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -410,6 +414,7 @@ public class PdfService {
             requestBody.put("selfintro_eval", selfintroEval);
             requestBody.put("resume_score", resumeScore);
             requestBody.put("selfintro_score", selfintroScore);
+            requestBody.put("resume_text", resumeText);
 
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
@@ -428,6 +433,7 @@ public class PdfService {
                     .message(feedbackNode.get("message").asText())
                     .gapText(feedbackNode.get("gap_text").asText())
                     .planText(feedbackNode.get("plan_text").asText())
+                    .selfIntroFeedback(feedbackNode.get("self_intro_feedback").asText())
                     .build();
 
         } catch (Exception e) {

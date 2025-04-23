@@ -11,4 +11,6 @@ public class EvalWrapperResponse {
     private List<PostingResultWrapper> matchingResumes;
     @JsonProperty("matching_resume")
     private List<ResumeResultWrapper> matchingResume;
+    @JsonProperty("resume_text")
+    private String resumeText;
 }
