@@ -65,7 +65,6 @@ public class PaymentService {
 
         // 2. Toss 응답을 DTO로 파싱
         TossPaymentResponse tossResponse = response.getBody();
-        System.out.println("tossResponse = " + tossResponse);
 
         String status = tossResponse.getStatus(); // ex: "DONE", "WAITING_FOR_DEPOSIT"
         String method = tossResponse.getMethod(); // ex: "카드", "가상계좌"
@@ -76,9 +75,6 @@ public class PaymentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("사용자 없음"));
 
-
-        // 4. 가상계좌 입금 대기 상태 처리 (approvedAt 없음)
-        System.out.println("method = " + method);
         if (status != null && status.equals("WAITING_FOR_DEPOSIT") &&
                 method != null && method.contains("가상계좌")) {
             return Map.of(

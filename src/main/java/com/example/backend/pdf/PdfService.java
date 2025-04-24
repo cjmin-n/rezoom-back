@@ -228,7 +228,6 @@ public class PdfService {
 
     public List<PostingResponseDTO> resume2posting(MultipartFile file) {
         try {
-            System.out.println("file: " + file.getOriginalFilename());
             // 1. form-data 구성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("resume", new MultipartInputStreamFileResource(
@@ -247,7 +246,7 @@ public class PdfService {
                     requestEntity,
                     String.class
             );
-            System.out.println("FastAPI 응답:\n" + response.getBody());
+
 
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule()); // LocalDate 파싱 지원
@@ -261,7 +260,6 @@ public class PdfService {
             );
 
             String resumeText = wrapper.getResumeText();
-            System.out.println("resumeText = " + resumeText);
 
             // wrapper 내부 리스트 반복
             for (PostingResultWrapper raw : wrapper.getMatchingResumes()) {
@@ -400,7 +398,7 @@ public class PdfService {
         }
 
         OneToneDTO dto = objectMapper.treeToValue(dataNode, OneToneDTO.class);
-        System.out.println("DTO 매핑 성공: " + dto);
+        S
 
         return List.of(dto);
     }

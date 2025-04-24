@@ -28,8 +28,6 @@ public class UserController implements UserControllerDocs {
 
         userService.saveUser(signUpRequestDTO); // 회원가입 진행 (DB 저장)
 
-        System.out.println("signUpRequestDTO: " + signUpRequestDTO);
-
         return ResponseEntity.ok(
                 UrlResponseDTO.builder()
                         .url("/auth/login") // 회원 가입이 완료된 후 로그인 페이지로 이동

@@ -76,10 +76,6 @@ public class PdfController  {
         }
 
         List<PostingResponseDTO> results = pdfService.resume2posting(file);
-        for(PostingResponseDTO postingResponseDTO : results) {
-            System.out.println(postingResponseDTO.toString());
-            System.out.println(postingResponseDTO.getResumeText());
-        }
         return ResponseEntity.ok(results);
     }
 
@@ -114,8 +110,7 @@ public class PdfController  {
 
     @PostMapping("/agent")
     public ResponseEntity<AgentFeedbackDTO> analyzeWithAgent(@RequestBody AgentRequestDTO dto) {
-        System.out.println("dto sif: " + dto.getSelfIntroFeedback());
-        System.out.println("dto sis "+dto.getSelfintro_score());
+
         try {
             AgentFeedbackDTO feedback = pdfService.analyzeWithAgent(
                     dto.getResume_eval(),
