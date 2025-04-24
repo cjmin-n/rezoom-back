@@ -32,7 +32,6 @@ public class TokenController implements TokenControllerDocs {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader, HttpServletResponse response) {
 
-        System.out.println("authHeader = " + authHeader);
         try {
             if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
                 authHeader = authHeader.substring(7);
@@ -54,99 +53,65 @@ public class TokenController implements TokenControllerDocs {
             refreshCookie.setMaxAge(0);
             response.addCookie(refreshCookie);
 
+            // SameSite=None 명시해서 완전 삭제
+            String deleteCookieHeader = "refreshToken=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=None";
+            response.setHeader("Set-Cookie", deleteCookieHeader);
+
+
             return ResponseEntity.ok(Map.of("message", "Logout successful."));
         } catch (Exception e) {
-            log.error("❌ 로그아웃 중 에러", e);
+            log.error("로그아웃 중 에러", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "An error occurred during logout."));
         }
     }
 
-    // front에서 이런식으로 요청 보내시면 돼요!
-    /**
-     *
-     * // API 요청 함수
-     * const makeApiRequest = async () => {
-     *   const accessToken = localStorage.getItem('accessToken'); // 로컬 스토리지에서 accessToken 가져오기
-     *
-     *   try {
-     *     // API 요청 (accessToken을 Authorization 헤더에 담아서)
-     *     const response = await axios.get('/some-protected-resource', {
-     *       headers: {
-     *         'Authorization': `Bearer ${accessToken}` // Authorization 헤더에 accessToken을 담아 요청
-     *       }
-     *     });
-     *     console.log(response.data);  // 서버 응답 데이터 처리
-     *   } catch (error) {
-     *     // 401 Unauthorized (accessToken이 만료되었을 때 서버가 401 응답을 보냄)
-     *     if (error.response && error.response.status === 401) {
-     *       console.log('Access token expired. Refreshing token...');
-     *
-     *       // refreshAccessToken 호출해서 새로운 accessToken을 받아옴
-     *       await refreshAccessToken();
-     *
-     *       // 새로 발급된 accessToken으로 다시 API 요청
-     *       makeApiRequest();
-     *     }
-     *   }
-     * };
-     *
-     * // refreshToken을 사용해 새로운 accessToken을 요청하는 함수
-     * const refreshAccessToken = async () => {
-     *   const refreshToken = localStorage.getItem('refreshToken'); // 저장된 refreshToken 가져오기
-     *
-     *   try {
-     *     // refreshToken을 서버로 보내서 새로운 accessToken을 요청
-     *     const response = await axios.post('/api/token/refresh', { refreshToken });
-     *
-     *     // 새로 발급받은 accessToken을 로컬 스토리지에 저장
-     *     localStorage.setItem('accessToken', response.data.accessToken);
-     *     console.log('New access token:', response.data.accessToken);
-     *
-     *   } catch (error) {
-     *     console.error('Error refreshing access token', error);
-     *   }
-     * };
-     *
-     * **/
-
     // front에서 refreshToken을 보내서 갱신하려는 경우에.
     // 프론트에서 refreshToken 넘겨주고 갱신하는 부분.
     @PostMapping("/refresh")
-    public ResponseEntity<TokenRefreshRequestDTO> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+    public ResponseEntity<TokenRefreshRequestDTO> refreshToken(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-        // refreshToken이 유효한지 검증
-        if (refreshToken == null || !jwtUtil.verifyToken(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(TokenRefreshRequestDTO.builder()
-                            .status(0)  // 상태 0 -> 오류 발생
-                            .message("Invalid or missing refresh token.")
-                            .build());
-        }
+        try {
+            // 1. refreshToken 존재 여부 및 유효성 검증
+            if (refreshToken == null || !jwtUtil.verifyToken(refreshToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(TokenRefreshRequestDTO.builder()
+                                .status(0)  // 상태 0 -> 오류 발생
+                                .message("Invalid or missing refresh token.")
+                                .build());
+            }
 
-        // refreshToken 으로 사용자 조회
-        User user = refreshTokenService.getUserByRefreshToken(refreshToken);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            // 2. refreshToken을 통해 사용자 정보 조회 (DB에 있는지 확인)
+            User user = refreshTokenService.getUserByRefreshToken(refreshToken);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(TokenRefreshRequestDTO.builder()
+                                .status(0)
+                                .message("User not found for the provided refresh token.")
+                                .build());
+            }
+
+            // 3. 유효한 refreshToken이 있다면 새로운 accessToken 발급
+            String newAccessToken = jwtUtil.generateAccessToken(user);
+            Date expiresAt = jwtUtil.getExpiration(newAccessToken); // 토큰 만료 시간 추출
+
+            // 4. 클라이언트에 accessToken과 만료 시간 응답
+            return ResponseEntity.ok(TokenRefreshRequestDTO.builder()
+                    .status(1)  // 상태 1 -> 성공
+                    .accessToken(newAccessToken)
+                    .expiresAt(expiresAt.toInstant().toString()) // ISO 8601 형식
+                    .build());
+
+        } catch (Exception e) {
+            // 5. 서버 내부 오류 발생 시 500 응답
+            log.error("Token refresh error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(TokenRefreshRequestDTO.builder()
                             .status(0)
-                            .message("User not found for the provided refresh token.")
+                            .message("Internal server error during token refresh.")
                             .build());
         }
-
-        // 유효한 refreshToken이 있으면 새로운 accessToken 발급
-        String newAccessToken = jwtUtil.generateAccessToken(user);
-
-        Date expiresAt = jwtUtil.getExpiration(newAccessToken);
-
-        // 결과 DTO 반환
-        TokenRefreshRequestDTO responseDTO = TokenRefreshRequestDTO.builder()
-                .status(1)  // 상태 1 -> 성공
-                .accessToken(newAccessToken)  // 새로 발급된 accessToken
-                .expiresAt(expiresAt.toInstant().toString()) // ISO 8601 형태
-                .build();
-
-        return ResponseEntity.ok(responseDTO);
     }
 
     @GetMapping("/me")

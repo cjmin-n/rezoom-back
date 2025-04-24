@@ -48,10 +48,12 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 기존 refreshToken 유효성 검증
         boolean reuseRefreshToken = false;
+        // 쿠키에 RT가 있고, 만료시간이 지나지 않았다면,
         if (existingRefreshToken != null && jwtUtil.verifyToken(existingRefreshToken)) {
             try {
                 // DB에도 존재해야 함
                 User tokenOwner = jwtUtil.getRefreshTokenService().getUserByRefreshToken(existingRefreshToken);
+                // 토큰의 사용자와, 실제 사용자가 같다면, 토큰 재사용 가능
                 if (tokenOwner != null && tokenOwner.getEmail().equals(user.getEmail())) {
                     reuseRefreshToken = true;
                 }
@@ -72,10 +74,21 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         // refreshToken을 다시 쿠키로 저장
         Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true); // 로컬에서는 false 가능
+        refreshCookie.setSecure(true); // 로컬은 false, 배포는 true
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(60 * 60 * 24 * 14); // 2주
+
+        // response에 기본 쿠키 추가 (중복 방지용)
         response.addCookie(refreshCookie);
+
+        // SameSite=None 설정을 위해 헤더 수동 추가
+        String cookieHeader = String.format(
+                "refreshToken=%s; Max-Age=%d; Path=/; Secure; HttpOnly; SameSite=None",
+                refreshToken,
+                60 * 60 * 24 * 14
+        );
+        response.setHeader("Set-Cookie", cookieHeader);
+
 
         // 수동으로 CSRF 토큰 꺼내서 쿠키로 내려보내기
 //        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
