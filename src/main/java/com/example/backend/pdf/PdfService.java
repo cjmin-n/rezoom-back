@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.backend.config.MultipartInputStreamFileResource;
 import com.example.backend.config.aws.S3Uploader;
 import com.example.backend.dto.*;
+import com.example.backend.dto.AgentFeedbackDTO;
 import com.example.backend.entity.Pdf;
 import com.example.backend.entity.User;
 import com.example.backend.user.UserRepository;
@@ -249,20 +250,22 @@ public class PdfService {
                     requestEntity,
                     String.class
             );
-            System.out.println("🔥 FastAPI 응답:\n" + response.getBody());
+
 
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule()); // LocalDate 파싱 지원
 
             List<PostingResponseDTO> resultList = new ArrayList<>();
 
-// ✅ 루트가 객체이므로 중간 Wrapper 사용
+            // 루트가 객체이므로 중간 Wrapper 사용
             EvalWrapperResponse wrapper = objectMapper.readValue(
                     response.getBody(),
                     EvalWrapperResponse.class
             );
 
-// ✅ wrapper 내부 리스트 반복
+            String resumeText = wrapper.getResumeText();
+
+            // wrapper 내부 리스트 반복
             for (PostingResultWrapper raw : wrapper.getMatchingResumes()) {
                 OneToneDTO result = raw.getResult();  // 이미 매핑된 JSON 객체
 
@@ -274,8 +277,9 @@ public class PdfService {
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
 
-                // ✅ 응답 DTO 구성
+                // 응답 DTO 구성
                 PostingResponseDTO dto = new PostingResponseDTO();
+                dto.setResumeText(resumeText);
                 dto.setTotalScore(result.getTotalScore());
                 dto.setResumeScore(result.getResumeScore());
                 dto.setSelfintroScore(result.getSelfintroScore());
@@ -386,7 +390,7 @@ public class PdfService {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode root = objectMapper.readTree(response.getBody());
 
-// JSON 구조: { "result": { "markup": "...", "data": { ... } } }
+        // JSON 구조: { "result": { "markup": "...", "data": { ... } } }
         JsonNode resultNode = root.get("result");
         if (resultNode == null || resultNode.isNull()) {
             throw new IllegalStateException("응답에 'result' 필드가 없습니다.");
@@ -398,20 +402,24 @@ public class PdfService {
         }
 
         OneToneDTO dto = objectMapper.treeToValue(dataNode, OneToneDTO.class);
-        System.out.println("✅ DTO 매핑 성공: " + dto);
+        S
 
         return List.of(dto);
     }
 
-    public String analyzeWithAgent(String evaluationResult) {
+    public AgentFeedbackDTO analyzeWithAgent(String resumeEval, String selfintroEval, int resumeScore, int selfintroScore, String resumeText) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("evaluation_result", evaluationResult);
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("resume_eval", resumeEval);
+            requestBody.put("selfintro_eval", selfintroEval);
+            requestBody.put("resume_score", resumeScore);
+            requestBody.put("selfintro_score", selfintroScore);
+            requestBody.put("resume_text", resumeText);
 
-            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
             ResponseEntity<String> response = restTemplate.postForEntity(
                     fastApiUrl + "/agent/analyze",
@@ -420,9 +428,16 @@ public class PdfService {
             );
 
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode json = objectMapper.readTree(response.getBody());
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode feedbackNode = root.get("agent_feedback");
 
-            return json.get("agent_feedback").asText();
+            return AgentFeedbackDTO.builder()
+                    .type(feedbackNode.get("type").asText())
+                    .message(feedbackNode.get("message").asText())
+                    .gapText(feedbackNode.get("gap_text").asText())
+                    .planText(feedbackNode.get("plan_text").asText())
+                    .selfIntroFeedback(feedbackNode.get("self_intro_feedback").asText())
+                    .build();
 
         } catch (Exception e) {
             throw new RuntimeException("FastAPI 호출 실패: " + e.getMessage());

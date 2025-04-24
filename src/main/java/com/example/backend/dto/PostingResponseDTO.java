@@ -14,6 +14,9 @@ import java.time.LocalDate;
 @Schema(description = "채용공고 매칭 결과 DTO")
 public class PostingResponseDTO {
 
+    @JsonProperty("resume_text")
+    private String resumeText;
+
     @JsonProperty("total_score")
     private String totalScore;
 
