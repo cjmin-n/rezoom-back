@@ -30,4 +30,7 @@ public class OneToneDTO {
 
     @JsonProperty("eval_selfintro")
     private String evalSelfintro;
+
+    @JsonProperty("resume_text")
+    private String resumeText;
 }

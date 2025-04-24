@@ -247,22 +247,23 @@ public class PdfService {
                     requestEntity,
                     String.class
             );
-            System.out.println("🔥 FastAPI 응답:\n" + response.getBody());
+            System.out.println("FastAPI 응답:\n" + response.getBody());
 
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule()); // LocalDate 파싱 지원
 
             List<PostingResponseDTO> resultList = new ArrayList<>();
 
-// ✅ 루트가 객체이므로 중간 Wrapper 사용
+            // 루트가 객체이므로 중간 Wrapper 사용
             EvalWrapperResponse wrapper = objectMapper.readValue(
                     response.getBody(),
                     EvalWrapperResponse.class
             );
 
-
             String resumeText = wrapper.getResumeText();
-// ✅ wrapper 내부 리스트 반복
+            System.out.println("resumeText = " + resumeText);
+
+            // wrapper 내부 리스트 반복
             for (PostingResultWrapper raw : wrapper.getMatchingResumes()) {
                 OneToneDTO result = raw.getResult();  // 이미 매핑된 JSON 객체
 
@@ -274,7 +275,7 @@ public class PdfService {
                     return s3Uploader.generatePresignedUrl("rezoombucket-v2", key, 30);
                 }).orElse(null);
 
-                // ✅ 응답 DTO 구성
+                // 응답 DTO 구성
                 PostingResponseDTO dto = new PostingResponseDTO();
                 dto.setResumeText(resumeText);
                 dto.setTotalScore(result.getTotalScore());
@@ -387,7 +388,7 @@ public class PdfService {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode root = objectMapper.readTree(response.getBody());
 
-// JSON 구조: { "result": { "markup": "...", "data": { ... } } }
+        // JSON 구조: { "result": { "markup": "...", "data": { ... } } }
         JsonNode resultNode = root.get("result");
         if (resultNode == null || resultNode.isNull()) {
             throw new IllegalStateException("응답에 'result' 필드가 없습니다.");
