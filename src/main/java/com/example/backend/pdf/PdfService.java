@@ -402,7 +402,6 @@ public class PdfService {
         }
 
         OneToneDTO dto = objectMapper.treeToValue(dataNode, OneToneDTO.class);
-        S
 
         return List.of(dto);
     }
