@@ -15,6 +15,12 @@ RUN ./gradlew clean build -x test
 FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
+# ✅ .env 파일 로드
+COPY .env .env
+
+# ✅ 환경 변수 적용
+RUN export $(grep -v '^#' .env | xargs)
+
 COPY --from=build /app/build/libs/*.jar app.jar
 
 CMD ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
